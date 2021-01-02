@@ -42,7 +42,7 @@ data we generated the Pairing and used it to create the ML models.
     * docs
 
 
-![Data Flow](/crewml/image/crewml-dataflow.png)
+![Data Flow](/image/crewml-dataflow.png)
 
 # Design
 simul Package
