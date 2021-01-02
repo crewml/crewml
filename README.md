@@ -45,18 +45,24 @@ data we generated the Pairing and used it to create the ML models.
 ![Data Flow](/image/crewml-dataflow.png)
 
 # Design
-simul Package
+## simul Package
+
 Following are important modules of the simulation package:
+
 FlightCleaner – Reads the commercial flight data, removes unnecessary data, and converts all the time to UTC.
+
 FlightClassifer – Reads the cleaned flight data, classifies the flights based on crew base and non-base.
+
 DutyGenerator – Uses the classified flights to create a duty for each flight which will be used to create the pairing.
+
 PairingGenerator – Uses the duty to generate pairing for the flights.
+
 CostCalculator – Calculates cost associated with each pairing.
 
-ml package
+## ml package
 Following are the important modules of ml package:
 
-config package
+## config package
 ConfigHolder – Manges config parameters used by simulation and ml packages
 
 log – contains log files
