@@ -15,13 +15,18 @@ data we generated the Pairing and used it to create the ML models.
 * crewml - Contains simulation and ml modules. simulation module contains packages to
   create pairings. ml module contains machine learning algorithm packages to 
   apply machine learning algorithms on the data generated from the simulation package.
+   
    * electric - Contains electric outage specific modules. It contains packages 
      to create JSON objects and XML messages. 
+   
    * tests - All unit tests that use pytest and moto (mock services for AWS). It also
      contains integration test units that start with int_test* which runs with various
      AWS services.
+   
    * resources - all config data
+   
    * log - contain log file
+   
    * data - contain various *.csv files
 
 # Thirdparty Packages used
