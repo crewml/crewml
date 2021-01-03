@@ -1,4 +1,4 @@
-import itertools
+
 import pandas as pd
 import os.path
 import numpy as np
@@ -7,43 +7,25 @@ from category_encoders import TargetEncoder
 import seaborn as sns
 from sklearn.feature_selection import f_regression, mutual_info_regression
 from scipy import stats
-
-data_path=os.path.dirname(__file__)+'/'
-
-flights_df = pd.read_csv(data_path+"all_flights_with_cost.csv")
-flights_df.drop(flights_df.filter(regex="Unname"),axis=1, inplace=True)
-#convert timedetal to seconds
-flights_df['FltTime']=pd.to_timedelta(flights_df['FltTime']).dt.seconds
-flights_df['totDutyTm']=pd.to_timedelta(flights_df['totDutyTm']).dt.seconds
-flights_df['totPairingUTC']=pd.to_timedelta(flights_df['totPairingUTC']).dt.seconds
-
-#convert datetime into second
-flights_df['OrgUTC']=pd.to_datetime(flights_df['OrgUTC'])
-flights_df['OrgUTC']=flights_df.OrgUTC.astype(int)
-
-flights_df['DestUTC']=pd.to_datetime(flights_df['DestUTC'])
-flights_df['DestUTC']=flights_df.OrgUTC.astype(int)
-
-flights_df['dtyRelTmUTC']=pd.to_datetime(flights_df['dtyRelTmUTC'])
-flights_df['dtyRelTmUTC']=flights_df.dtyRelTmUTC.astype(int)
-
-flights_df['dtyRepTmUTC']=pd.to_datetime(flights_df['dtyRepTmUTC'])
-flights_df['dtyRepTmUTC']=flights_df.OrgUTC.astype(int)
-
-#Convert flight date to int
-flights_df['FlightDate']=flights_df.FlightDate.str.replace("/","").astype(int)
+from setup import DATA_DIR
+import logging
+import os.path
 
 
-flights_df.groupby('Origin').boxplot(fontsize=15,rot=50,figsize=(20,20),patch_artist=True)
 
+
+
+
+
+'''
 temp1=flights_df[flights_df['pairingId'].isnull()]
 temp1['pairingId']=0
 temp2=flights_df[~flights_df['fltID'].isin(temp1.fltID)]
 temp2['pairingId']=1
 flights_df=temp1.append(temp2)
-'''
+
 Use TargetEncoder to encode the flight Origin and Destination
-'''
+
 encoder = TargetEncoder()
 flights_df['Origin'] = encoder.fit_transform(flights_df['Origin'], flights_df['cost'])
 encoder = TargetEncoder()
@@ -91,6 +73,9 @@ def plot_join_plot(df, feature, target):
     return plt.show()
 
 plot_join_plot(flights_df, "Dest", "cost")
+'''
+
+
 
 '''
 feature selection methods
@@ -108,4 +93,41 @@ Mutual Selection (non-linear models)
 
 '''
 
+class PairingVisualizer:
+    def __init__(self, feature_file):
+        self.logger = logging.getLogger(__name__)
+        self.feature_file=feature_file
+        self.pairing_df=None
+        
+        print("feature_file=",feature_file)
+    
+    def process(self):
+        self.pairing_df = pd.read_csv(DATA_DIR+self.feature_file)
+        self.logger.info("Pairing data read from:", self.feature_file)
+        
+        self.pairing_df.drop(self.pairing_df.filter(regex="Unname"),axis=1, inplace=True)
+                
+        #convert time to seconds
+        self.pairing_df['FltTime']=pd.to_timedelta(self.pairing_df['FltTime']).dt.seconds
+        self.pairing_df['totDutyTm']=pd.to_timedelta(self.pairing_df['totDutyTm']).dt.seconds
+        self.pairing_df['totPairingUTC']=pd.to_timedelta(self.pairing_df['totPairingUTC']).dt.seconds
+        
+        #convert datetime into second
+        self.pairing_df['OrgUTC']=pd.to_datetime(self.pairing_df['OrgUTC'])
+        self.pairing_df['OrgUTC']=self.pairing_df.OrgUTC.astype(int)
+        
+        self.pairing_df['DestUTC']=pd.to_datetime(self.pairing_df['DestUTC'])
+        self.pairing_df['DestUTC']=self.pairing_df.OrgUTC.astype(int)
+        
+        self.pairing_df['dtyRelTmUTC']=pd.to_datetime(self.pairing_df['dtyRelTmUTC'])
+        self.pairing_df['dtyRelTmUTC']=self.pairing_df.dtyRelTmUTC.astype(int)
+        
+        self.pairing_df['dtyRepTmUTC']=pd.to_datetime(self.pairing_df['dtyRepTmUTC'])
+        self.pairing_df['dtyRepTmUTC']=self.pairing_df.OrgUTC.astype(int)
 
+
+        #Convert flight date to int
+        self.pairing_df['FlightDate']=self.pairing_df.FlightDate.str.replace("/","").astype(int)
+        
+    def create_box_plot(self):
+        self.pairing_df.groupby('Origin').boxplot(fontsize=15,rot=50,figsize=(30,30),patch_artist=True)
