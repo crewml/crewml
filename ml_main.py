@@ -39,15 +39,20 @@ def main():
         
         data_path=os.path.dirname(__file__)
         
-        ch=config.ConfigHolder(data_path+"\\config\\resources\\pairing_config.ini")
-        '''
-        Create FlightCleaner object, load the flights, use the timezone to convert the local departure and arrival time to
-        UTC time
-        '''
+        ch=config.ConfigHolder(data_path+"/config/resources/pairing_config.ini")
+
+
         pairing_input_file=ch.getValue("cost_cal_output_file")
         pv=prv.PairingVisualizer(pairing_input_file)
         pv.process()
-        pv.create_box_plot()
+        pv.plot_box()
+        pv.encode_pairing_feature()
+
+        pv.plot_histogram()
+        pv.plot_scatter("Dest")
+        pv.plot_pivot("Dest")
+        pv.plot_pair("Dest")
+
         
         logger.info("Finished main")
     except Exception as e: 

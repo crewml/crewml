@@ -14,69 +14,6 @@ import os.path
 
 
 
-
-
-
-'''
-temp1=flights_df[flights_df['pairingId'].isnull()]
-temp1['pairingId']=0
-temp2=flights_df[~flights_df['fltID'].isin(temp1.fltID)]
-temp2['pairingId']=1
-flights_df=temp1.append(temp2)
-
-Use TargetEncoder to encode the flight Origin and Destination
-
-encoder = TargetEncoder()
-flights_df['Origin'] = encoder.fit_transform(flights_df['Origin'], flights_df['cost'])
-encoder = TargetEncoder()
-flights_df['Dest'] = encoder.fit_transform(flights_df['Dest'], flights_df['cost'])
-encoder = TargetEncoder()
-flights_df['Tail_Number'] = encoder.fit_transform(flights_df['Tail_Number'], flights_df['cost'])
-
-#print column name with total nan values in it
-nan_col_count=flights_df.isna().sum()
-print("Number of NA values for each feature")
-print(nan_col_count)
-
-
-flights_df['cost'].plot.hist(title="Flight Cost Distribution")
-plt.xlabel('Cost')
-plt.ylabel('# of occurance')
-
-print("Correlations") 
-#Default it uses Pearson corralation coefficient that goes from -1 to 1           
-correlations = flights_df.corr()
-plt.figure(figsize=(12,10))
-sns.heatmap(correlations, annot=True, cmap=plt.cm.Reds)
-correlations = correlations['cost']
-print(correlations)
-
-#plot each feature with the target "cost" to visualize the corralation 
-flights_df.plot.scatter(x='Dest', y='cost')
-
-
-#Pivot plot shows the relationship between two features or a feature/target
-pivot = pd.pivot_table(flights_df.sample(10), values='cost', index=['totPairingUTC'], aggfunc=np.mean)
-pivot.plot(kind='bar')
-
-#pairplot gives histogram of all the numerical features along the diagonal and shows the 
-#graph between two features
-sns.set_style("whitegrid");
-#sns.pairplot(abs(flights_df.sample(1000)),size=3)
-#sns.pairplot(flights_df.sample(1000), hue="Origin", size=3);
-
-#sns.boxplot(x='Origin',y='cost',data=flights_df.sample(10))
-
-def plot_join_plot(df, feature, target):
-    j = sns.jointplot(feature, target, data = df, kind = 'reg')
-    j.annotate(stats.pearsonr)
-    return plt.show()
-
-plot_join_plot(flights_df, "Dest", "cost")
-'''
-
-
-
 '''
 feature selection methods
 Filter methods
@@ -125,9 +62,99 @@ class PairingVisualizer:
         self.pairing_df['dtyRepTmUTC']=pd.to_datetime(self.pairing_df['dtyRepTmUTC'])
         self.pairing_df['dtyRepTmUTC']=self.pairing_df.OrgUTC.astype(int)
 
-
         #Convert flight date to int
-        self.pairing_df['FlightDate']=self.pairing_df.FlightDate.str.replace("/","").astype(int)
+        self.pairing_df['FlightDate'] = self.pairing_df['FlightDate'].astype(str)
         
-    def create_box_plot(self):
+        self.pairing_df['FlightDate']=self.pairing_df.FlightDate.str.replace("-","").astype(int)
+    
+    '''
+    Create box plot for the pairing data retrieved and processed from the process
+    function
+    '''
+    def plot_box(self):
         self.pairing_df.groupby('Origin').boxplot(fontsize=15,rot=50,figsize=(30,30),patch_artist=True)
+        plt.show()
+    '''
+    Use the TargetEncoder to encode Origin, Dest, TailNumber features, these 
+    feature has alphanumeric and this function converts it to numeric using
+    TargetEncoder
+    '''
+    def encode_pairing_feature(self):
+        temp1=self.pairing_df[self.pairing_df['pairingId'].isnull()]
+        temp1['pairingId']=0
+        temp2=self.pairing_df[~self.pairing_df['fltID'].isin(temp1.fltID)]
+        temp2['pairingId']=1
+        self.pairing_df=temp1.append(temp2)
+        
+        #Use TargetEncoder to encode the flight Origin and Destination 
+        encoder = TargetEncoder()
+        self.pairing_df['Origin'] = encoder.fit_transform(self.pairing_df['Origin'], self.pairing_df['cost'])
+        encoder = TargetEncoder()
+        self.pairing_df['Dest'] = encoder.fit_transform(self.pairing_df['Dest'], self.pairing_df['cost'])
+        encoder = TargetEncoder()
+        self.pairing_df['Tail_Number'] = encoder.fit_transform(self.pairing_df['Tail_Number'], self.pairing_df['cost'])
+        
+        #print column name with total nan values in it
+        nan_col_count=self.pairing_df.isna().sum()
+        logging.info("Number of NA values for each feature")
+        logging.info(nan_col_count)
+    
+    '''
+    Plot histogram graph for the pairing feature
+    '''    
+    def plot_histogram(self):
+        self.pairing_df['cost'].plot.hist(title="Flight Cost Distribution")
+        plt.xlabel('Cost')
+        plt.ylabel('# of occurance')
+        plt.show()
+        
+    '''
+    Default it uses Pearson corralation coefficient that goes from -1 to 1  
+    '''        
+    def calculate_Correlations(self):
+        correlations = self.pairing_df.corr()
+        plt.figure(figsize=(12,10))
+        sns.heatmap(correlations, annot=True, cmap=plt.cm.Reds)
+        correlations = correlations['cost']
+        logging.info(correlations)
+   
+    '''
+    plot passed-in feature with the target "cost" to visualize the corralation     
+    '''    
+    def plot_scatter(self, feature):
+        #plot each feature with the target "cost" to visualize the corralation 
+        self.pairing_df.plot.scatter(x=feature, y='cost')
+        plt.show()
+        
+    
+    '''
+    plot pivot for the passed-in feature with the 
+    '''
+    def plot_pivot(self, feature):
+        #Pivot plot shows the relationship between two features or a feature/target
+        pivot = pd.pivot_table(self.pairing_df.sample(10), values='cost', index=[feature], aggfunc=np.mean)
+        pivot.plot(kind='bar')
+        plt.show()
+        
+
+    '''
+    pairplot gives histogram of all the numerical features along the diagonal and shows the 
+    graph between two features
+    '''    
+    def plot_pair(self, feature):
+        sns.set_style("whitegrid");
+        #sns.pairplot(abs(self.pairing_df.sample(1000)),size=3)
+        sns.pairplot(self.pairing_df.sample(1000), hue=feature, size=3)
+        sns.boxplot(x=feature,y='cost',data=self.pairing_df.sample(10))
+        plt.show()
+
+    def plot_join_plot(self, feature, target):
+        j = sns.jointplot(feature, target, data = self.pairing_df, kind = 'reg')
+        j.annotate(stats.pearsonr)
+        plt.show()
+
+
+        
+        
+        
+    
