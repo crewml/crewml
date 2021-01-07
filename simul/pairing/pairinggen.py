@@ -30,6 +30,10 @@ import logging
 import setup as st
 import traceback
 
+'''
+This class takes duty file and generates Pairing by combining the duties
+'''
+
 class PairingGenerator:
         
     def __init__(self,input_file,pairing_gen_missing_files,output_file):

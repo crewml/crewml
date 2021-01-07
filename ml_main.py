@@ -24,11 +24,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
+
 import traceback
 import os.path
 import setup as st
 from config import config
 from ml import prvisualize as prv
+
+'''
+Main function to to execute ML package
+'''
 
 def main():
     try:
