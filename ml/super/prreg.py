@@ -46,6 +46,7 @@ from sklearn import ensemble
 import matplotlib.pyplot as plt
 import _pickle as cPickle
 import logging
+from setup import DATA_DIR
 
 
    
@@ -61,7 +62,7 @@ class PairingRegressor:
         self.y_test=None
         
     def process(self):
-        self.pairing_df = pd.read_csv(self.feature_file)
+        self.pairing_df = pd.read_csv(DATA_DIR+self.feature_file)
         self.pairing_df.drop(self.pairing_df.filter(regex="Unname"),axis=1, inplace=True)
         #convert timedetal to seconds
         self.pairing_df['FltTime']=pd.to_timedelta(self.pairing_df['FltTime']).dt.seconds
@@ -82,19 +83,7 @@ class PairingRegressor:
         self.pairing_df['dtyRepTmUTC']=self.pairing_df.OrgUTC.astype(int)
         
         #Convert flight date to int
-        self.pairing_df['FlightDate']=self.pairing_df.FlightDate.str.replace("/","").astype(int)
-        
-        self.clean_pairing(self.pairing_df)
-
-        self.target_df=pd.DataFrame()
-        self.target_df['cost']=self.pairing_df['cost']
-        del self.pairing_df['cost']
-        
-        temp1=self.pairing_df[self.pairing_df['pairingId'].isnull()]
-        temp1['pairingId']=0
-        temp2=self.pairing_df[~self.pairing_df['fltID'].isin(temp1.fltID)]
-        temp2['pairingId']=1
-        self.pairing_df=temp1.append(temp2)
+        self.pairing_df['FlightDate']=self.pairing_df.FlightDate.str.replace("-","").astype(int)
         
         '''
         Use TargetEncoder to encode the flight Origin and Destination
@@ -109,7 +98,21 @@ class PairingRegressor:
         del self.pairing_df['Origin']
         del self.pairing_df['Dest']
         del self.pairing_df['Tail_Number']
-        del self.pairing_df['pairingId']
+        del self.pairing_df['Marketing_Airline_Network']
+        
+        self.clean_pairing()
+
+        self.target_df=pd.DataFrame()
+        self.target_df['cost']=self.pairing_df['cost']
+        del self.pairing_df['cost']
+        
+        temp1=self.pairing_df[self.pairing_df['pairingId'].isnull()]
+        temp1['pairingId']=0
+        temp2=self.pairing_df[~self.pairing_df['fltID'].isin(temp1.fltID)]
+        temp2['pairingId']=1
+        self.pairing_df=temp1.append(temp2)
+        
+
 
                 
     '''
@@ -127,11 +130,11 @@ class PairingRegressor:
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.pairing_df, self.target_df, test_size=0.30, random_state=40)
           
 
-    def perfom_decision_tree(self):
+    def perfom_decision_tree_regressor(self):
   
         #----------use DecisionTree to fit the data------------
         dtree = DecisionTreeRegressor(max_depth=25, min_samples_leaf=0.13, random_state=3)
-        dtree.fit(self.fX_train, self.y_train)
+        dtree.fit(self.X_train, self.y_train)
         
         pred_train_tree= dtree.predict(self.X_train)
         print("tree alg-mean_squared for train=",np.sqrt(mean_squared_error(self.y_train,pred_train_tree)))
@@ -144,7 +147,7 @@ class PairingRegressor:
         print("tree alg-r2_score for test=",r2_score(self.y_test, pred_test_tree))
 
 
-    def perform_xgboost(self):
+    def perform_xgboost_regressor(self):
         #Use XGBoost regresstion alg
         params = {'n_estimators': 500,
                   'max_depth': 4,

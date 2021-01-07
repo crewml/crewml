@@ -29,8 +29,8 @@ import traceback
 import os.path
 import setup as st
 from config import config
-from ml import prvisualize as prv
-
+from ml.super import prvisualize as prv
+from ml.super import prreg as prr
 '''
 Main function to to execute ML package
 '''
@@ -48,15 +48,21 @@ def main():
 
 
         pairing_input_file=ch.getValue("cost_cal_output_file")
+       
         pv=prv.PairingVisualizer(pairing_input_file)
         pv.process()
         pv.plot_box()
         pv.encode_pairing_feature()
-
         pv.plot_histogram()
         pv.plot_scatter("Dest")
         pv.plot_pivot("Dest")
         pv.plot_pair("Dest")
+        
+        pr=prr.PairingRegressor(pairing_input_file)
+        pr.process()
+        pr.split_feature()
+        pr.perfom_decision_tree_regressor()
+        pr.perform_xgboost_regressor()
 
         
         logger.info("Finished main")
