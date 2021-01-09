@@ -46,7 +46,7 @@ from sklearn import ensemble
 import matplotlib.pyplot as plt
 import _pickle as cPickle
 import logging
-from setup import DATA_DIR
+from common import DATA_DIR
 
 
    

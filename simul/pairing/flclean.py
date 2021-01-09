@@ -31,7 +31,7 @@ import calendar
 import datetime
 import pytz
 import logging.config
-from setup import DATA_DIR
+from common import DATA_DIR
 
 '''
 This program reads flight data, and converts all the local timestamp to UTC and removes

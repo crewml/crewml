@@ -27,7 +27,7 @@ SOFTWARE.
 
 import pandas as pd
 import logging
-import setup as st
+import common as st
 import traceback
 
 '''

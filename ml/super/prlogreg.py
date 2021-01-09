@@ -47,7 +47,7 @@ import _pickle as cPickle
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.metrics import f1_score
 import logging
-from setup import DATA_DIR
+from common import DATA_DIR
 
 
 class PairingLogRegressor:

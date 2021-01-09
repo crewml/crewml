@@ -23,36 +23,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-
-import setuptools
-
-with open("README.md", "r", encoding="utf-8") as f:
-    long_description = f.read()
-
-setuptools.setup(
-    name="crewml", 
-    version="0.0.1",
-    author="Mani Malarvannan",
-    author_email="info@crewml.org",
-    description="Open source ML for Airline Crew optimization",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/crewml/crewml",
-    packages=setuptools.find_packages(),
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ],
-    python_requires='>=3.6',
-    install_requires=[
-        'scipy',
-        'scikit-learn',
-        'seaborn',
-        'numpy',
-        'pandas'
-    ]
-)
-
-
-

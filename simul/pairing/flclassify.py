@@ -29,7 +29,7 @@ import pandas as pd
 
 import itertools
 import datetime
-from setup import DATA_DIR
+from common import DATA_DIR
 import logging
 import traceback
 

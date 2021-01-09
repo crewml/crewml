@@ -31,7 +31,7 @@ from simul.pairing import flclassify
 from simul.pairing import dutygen as dg
 from simul.pairing import pairinggen as pg
 from simul.pairing import costcal as cc
-import setup as st
+import common as st
 
 
 def main():
@@ -43,7 +43,7 @@ def main():
         
         data_path=os.path.dirname(__file__)
         
-        ch=config.ConfigHolder(data_path+"\\config\\resources\\pairing_config.ini")
+        ch=config.ConfigHolder(st.LOG_DIR+"pairing_config.ini")
         '''
         Create FlightCleaner object, load the flights, use the timezone to convert the local departure and arrival time to
         UTC time

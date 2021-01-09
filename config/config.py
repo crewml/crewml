@@ -71,13 +71,5 @@ class ConfigHolder:
    def getValue(self,key):
       return self.__dict__.get(key)
 
-'''
-ch=ConfigHolder(ROOT_DIR+"\\resources\\pairing_config.ini")   
-print(ch.Created_UPDATE12_ELECTRIC_OUTAGE_TROUBLE_TICKET)
-print(ch.Updated_Dispatched)
-action="Updated_"
-event_type="Dispatched"
 
-print("the=",ch.getValue(action+event_type))
-'''
     

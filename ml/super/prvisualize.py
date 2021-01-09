@@ -32,7 +32,7 @@ from category_encoders import TargetEncoder
 import seaborn as sns
 from sklearn.feature_selection import f_regression, mutual_info_regression
 from scipy import stats
-from setup import DATA_DIR
+from common import DATA_DIR
 import logging
 
 

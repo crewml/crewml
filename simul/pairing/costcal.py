@@ -27,7 +27,7 @@ SOFTWARE.
 import logging
 import pandas as pd
 import datetime
-import setup as st
+import common as st
 import traceback
 
 '''
