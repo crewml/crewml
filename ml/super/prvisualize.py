@@ -57,6 +57,20 @@ Mutual Selection (non-linear models)
 
 class PairingVisualizer:
     def __init__(self, feature_file):
+        '''
+        Create PairingVisualizer with feature file
+
+        Parameters
+        ----------
+        feature_file : TYPE
+            Feature file that has pairing data that needs to be visualized
+
+        Returns
+        -------
+        None.
+
+        '''
+        
         self.logger = logging.getLogger(__name__)
         self.feature_file=feature_file
         self.pairing_df=None
@@ -64,6 +78,14 @@ class PairingVisualizer:
         print("feature_file=",feature_file)
     
     def process(self):
+        '''
+        process pairing data and prepare for visualization
+
+        Returns
+        -------
+        None.
+
+        '''
         self.pairing_df = pd.read_csv(DATA_DIR+self.feature_file)
         self.logger.info("Pairing data read from:", self.feature_file)
         
@@ -97,14 +119,28 @@ class PairingVisualizer:
     function
     '''
     def plot_box(self):
+        '''
+        Display box plot of pairing data
+
+        Returns
+        -------
+        None.
+
+        '''
         self.pairing_df.groupby('Origin').boxplot(fontsize=15,rot=50,figsize=(30,30),patch_artist=True)
         plt.show()
-    '''
-    Use the TargetEncoder to encode Origin, Dest, TailNumber features, these 
-    feature has alphanumeric and this function converts it to numeric using
-    TargetEncoder
-    '''
+ 
     def encode_pairing_feature(self):
+        '''
+        Use the TargetEncoder to encode Origin, Dest, TailNumber features, these 
+        feature has alphanumeric and this function converts it to numeric using
+        TargetEncoder
+
+        Returns
+        -------
+        None.
+
+        '''
         temp1=self.pairing_df[self.pairing_df['pairingId'].isnull()]
         temp1['pairingId']=0
         temp2=self.pairing_df[~self.pairing_df['fltID'].isin(temp1.fltID)]
@@ -124,49 +160,95 @@ class PairingVisualizer:
         logging.info("Number of NA values for each feature")
         logging.info(nan_col_count)
     
-    '''
-    Plot histogram graph for the pairing feature
-    '''    
+  
     def plot_histogram(self):
+        '''
+        Plot histogram graph for the pairing feature
+
+        Returns
+        -------
+        None.
+
+        '''
         self.pairing_df['cost'].plot.hist(title="Flight Cost Distribution")
         plt.xlabel('Cost')
         plt.ylabel('# of occurance')
         plt.show()
         
-    '''
-    Default it uses Pearson corralation coefficient that goes from -1 to 1  
-    '''        
+      
     def calculate_Correlations(self):
+        '''
+        Default it uses Pearson corralation coefficient that goes from -1 to 1  
+        
+
+        Returns
+        -------
+        None.
+
+        '''
+        
         correlations = self.pairing_df.corr()
         plt.figure(figsize=(12,10))
         sns.heatmap(correlations, annot=True, cmap=plt.cm.Reds)
         correlations = correlations['cost']
         logging.info(correlations)
    
-    '''
-    plot passed-in feature with the target "cost" to visualize the corralation     
-    '''    
+    
     def plot_scatter(self, feature):
+        '''
+        plot passed-in feature with the target "cost" to visualize the corralation  
+
+        Parameters
+        ----------
+        feature : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
         #plot each feature with the target "cost" to visualize the corralation 
         self.pairing_df.plot.scatter(x=feature, y='cost')
         plt.show()
         
     
-    '''
-    plot pivot for the passed-in feature with the 
-    '''
+
     def plot_pivot(self, feature):
+        '''
+        plot pivot for the passed-in feature
+        
+        Parameters
+        ----------
+        feature : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
         #Pivot plot shows the relationship between two features or a feature/target
         pivot = pd.pivot_table(self.pairing_df.sample(10), values='cost', index=[feature], aggfunc=np.mean)
         pivot.plot(kind='bar')
         plt.show()
         
-
-    '''
-    pairplot gives histogram of all the numerical features along the diagonal and shows the 
-    graph between two features
-    '''    
+  
     def plot_pair(self, feature):
+        '''
+        pairplot gives histogram of all the numerical features along the diagonal and shows the 
+        graph between two features
+
+        Parameters
+        ----------
+        feature : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
         sns.set_style("whitegrid");
         #sns.pairplot(abs(self.pairing_df.sample(1000)),size=3)
         sns.pairplot(self.pairing_df.sample(1000), hue=feature, size=3)
@@ -174,6 +256,21 @@ class PairingVisualizer:
         plt.show()
 
     def plot_join_plot(self, feature, target):
+        '''
+        Plot join graph for the passed in feature and target variable
+
+        Parameters
+        ----------
+        feature : TYPE
+            DESCRIPTION.
+        target : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
         j = sns.jointplot(feature, target, data = self.pairing_df, kind = 'reg')
         j.annotate(stats.pearsonr)
         plt.show()
