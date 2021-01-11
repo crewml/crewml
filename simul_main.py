@@ -35,6 +35,14 @@ import common as st
 
 
 def main():
+    '''
+    Main function to execute crewml simul functions
+
+    Returns
+    -------
+    None.
+
+    '''
     try:
         logger = logging.getLogger(__name__)
     

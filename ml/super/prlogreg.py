@@ -52,6 +52,18 @@ from common import DATA_DIR
 
 class PairingLogRegressor:
     def __init__(self, feature_file):
+        '''
+
+        Parameters
+        ----------
+        feature_file : TYPE
+            Name of input file to read pairing data
+
+        Returns
+        -------
+        None.
+
+        '''
         self.logger = logging.getLogger(__name__)
         self.feature_file=feature_file
         self.pairing_df=None
@@ -62,6 +74,14 @@ class PairingLogRegressor:
         self.y_test=None
         
     def process(self):
+        '''
+        Prepars Pairing data for Logistic Regression
+
+        Returns
+        -------
+        None.
+
+        '''
         self.pairing_df = pd.read_csv(DATA_DIR+self.feature_file)
         self.pairing_df.drop(self.pairing_df.filter(regex="Unname"),axis=1, inplace=True)
         #convert timedetal to seconds
@@ -112,22 +132,44 @@ class PairingLogRegressor:
         temp2['pairingId']=1
         self.pairing_df=temp1.append(temp2)
         
-    '''
-    Clean the data for Nan and too large values
-    '''
+
     def clean_pairing(self):
+        '''
+         Clean the data for Nan and too large values
+
+        Returns
+        -------
+        None.
+
+        '''
         assert isinstance(self.pairing_df, pd.DataFrame), "df needs to be a pd.DataFrame"
         self.pairing_df.dropna(inplace=True)
         indices_to_keep = ~self.pairing_df.isin([np.nan, np.inf, -np.inf]).any(1)
         
-        return self.pairing_df[indices_to_keep].astype(np.float64) 
+        self.pairing_df[indices_to_keep].astype(np.float64) 
     
     def split_feature(self):
+        '''        
+        Splits Pairing feature into test and train data sets
+        Returns
+        -------
+        None.
+
+        '''
         #Split data into train and test
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.pairing_df, self.target_df, test_size=0.30, random_state=40)
                   
     
     def decision_tree_classifier(self):
+        '''
+        Using the train and test data crete DecisionTreeClassifier to train and test the
+        Pairing data
+
+        Returns
+        -------
+        None.
+
+        '''
         #----------use DecisionTree to fit the data------------
         dtree = DecisionTreeClassifier(max_depth=25, min_samples_leaf=0.13, random_state=3)
         dtree.fit(self.X_train, self.y_train)
@@ -150,6 +192,15 @@ class PairingLogRegressor:
         
     
     def gradient_boost_classifier(self):
+        '''
+        Using the train and test data crete GradientBoostingClassifier to train and test the
+        Pairing data        
+
+        Returns
+        -------
+        None.
+
+        '''
         #Use XGBoost regresstion alg
         params = {'n_estimators': 500,
                   'max_depth': 4,
@@ -173,6 +224,15 @@ class PairingLogRegressor:
         
         
     def random_forest_classifier(self):
+        '''
+        Using the train and test data crete GradientBoostingClassifier to train and test the
+        Pairing data          
+
+        Returns
+        -------
+        None.
+
+        '''
         #Use XGBoost forest alg
         params = {'n_estimators': 200,
                   'max_depth': 30,

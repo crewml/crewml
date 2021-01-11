@@ -34,11 +34,18 @@ from ml.super import prreg as prr
 from ml.super import prlogreg as prlg 
 
 
-'''
-Main function to to execute ML package
-'''
+
 
 def main():
+    '''
+    Main function to to execute ML package
+
+    Returns
+    -------
+    None.
+
+    '''
+
     try:
         logger = logging.getLogger(__name__)
     

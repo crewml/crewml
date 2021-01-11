@@ -41,10 +41,8 @@ __copyright__ ="Copyright 2020 Xcel Energy, Inc"
 import configparser
 import logging
 import traceback
-'''
-This class reads the configuration data from the passed file names. The file names
-must be in *.ini format wih section and parameters below the section
-'''
+
+
 
 
 
@@ -52,6 +50,25 @@ class ConfigHolder:
    section_names=["flight_data"]
  
    def __init__(self, *file_names):
+       '''
+       This class reads the configuration data from the passed file names. The file names
+       must be in *.ini format wih section and parameters below the section
+
+       Parameters
+       ----------
+       *file_names : TYPE
+           Name of the configuration file  "resources/pairing_config.ini"
+
+       Raises
+       ------
+       ValueError
+           Specified Config file not found error
+
+       Returns
+       -------
+       None.
+
+       '''
        try:
            self.logger=logging.getLogger(__name__)
            
