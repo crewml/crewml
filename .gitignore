@@ -1,7 +1,8 @@
-<<<<<<< HEAD
-**/logs/*.log
-__pycache__/
-=======
+#ignored dirs
+download/
+rawdata/
+log/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -131,4 +132,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
->>>>>>> 2d9968608e4fba9680324001167e8575cadcfbb0

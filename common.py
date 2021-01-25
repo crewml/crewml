@@ -28,8 +28,8 @@ import os
 
 
 ROOT_DIR = os.getcwd()
-DATA_DIR=ROOT_DIR+"/data/"
-LOG_DIR = ROOT_DIR+"/config/resources/"
+DATA_DIR=ROOT_DIR+"/crewml/rawdata/"
+RESOURCE_DIR = ROOT_DIR+"/crewml/config/resources/"
 
 
 

@@ -47,7 +47,7 @@ import traceback
 
 
 class ConfigHolder:
-   section_names=["flight_data"]
+   section_names=["flight_data", "download"]
  
    def __init__(self, *file_names):
        '''
