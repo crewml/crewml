@@ -41,7 +41,7 @@ from crewml.exception import CrewmlValueError
 class Downloader:
     def __init__(self, name, year=None, month=None, overwrite=False):
         '''
-        Create Downloader to download data
+        Create Downloader to download data from S3
 
         Parameters
         ----------

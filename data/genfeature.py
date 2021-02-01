@@ -103,7 +103,7 @@ Currently, bivariate plots (x and y) are available only for histograms and KDEs:
 #sns.lineplot(data=flight_df, x="FL_DATE", y="DISTANCE", style="DEST", hue="CRS_DEP_TIME") good one
 '''
 sns.lineplot(
-    data=flight_df, x="FL_DATE", y="DISTANCE", 
+    data=flight_df, x="FL_DATE", y="DISTANCE",
     hue="ORIGIN")  confulsing lines
 '''
 sns.lineplot(
