@@ -32,6 +32,8 @@ import crewml.common as st
 from crewml.exception import CrewmlDataError
 
 class GenericFeature:
+    '''
+    '''
     
     def __init__(self,feature_name="flight", load_dir=None, file_name=None):
         self.logger = logging.getLogger(__name__)
