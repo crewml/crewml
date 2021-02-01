@@ -51,7 +51,7 @@ def main():
         
         data_path=os.path.dirname(__file__)
         
-        ch=config.ConfigHolder(st.LOG_DIR+"pairing_config.ini")
+        ch=config.ConfigHolder(st.RESOURCE_DIR+"pairing_config.ini")
         '''
         Create FlightCleaner object, load the flights, use the timezone to convert the local departure and arrival time to
         UTC time
