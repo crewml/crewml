@@ -2,6 +2,8 @@
 download/
 rawdata/
 log/
+*.zip
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

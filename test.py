@@ -1,5 +1,15 @@
+import crewml.data.feature as fet
+import crewml.ml.visual.visualizer as vis
 
-import seaborn as sns
-penguins = sns.load_dataset("penguins")
-sns.displot(penguins, x="flipper_length_mm")
+
+
+feature=fet.Feature()
+df=feature.load()
+rp=vis.RelationalPlot(feature)
+rp.plot_numeric_features(type="scatter")
+
+
+    
+
+    
 

@@ -72,21 +72,24 @@ class ConfigHolder:
        try:
            self.logger=logging.getLogger(__name__)
            
-           parser = configparser.ConfigParser()
-           parser.optionxform = str  # make option names case sensitive
+           self.parser = configparser.ConfigParser()
+           self.parser.optionxform = str  # make option names case sensitive
            self.logger.debug("Opening config file(s) %s",file_names)
-           found = parser.read(file_names)
+           found = self.parser.read(file_names)
            
            if not found:
                raise ValueError('No config file(s) found',file_names)
            for name in ConfigHolder.section_names:
-                self.__dict__.update(parser.items(name)) 
+                self.__dict__.update(self.parser.items(name)) 
        except Exception as e:
             self.logger.error(traceback.format_exc())
             raise
             
    def getValue(self,key):
       return self.__dict__.get(key)
+  
+   def get_value(self,section_name,key):
+       return self.parser.get(section_name, key)
 
 
     
