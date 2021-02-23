@@ -29,112 +29,283 @@ import crewml.exception as exp
 import matplotlib.pyplot as plt
 
 
-
 class Visualizer:
-    fig_styles=["white_grid", "dark_grid", "white", "dark", "ticks"] 
-    fig_contexts=["paper", "notebook", "talk", "poster"]
-    
+    '''
+    Parent class for all visualization classes. It contains all the basic
+    matlab plot objects like Figure, Axes to generically create the subplot
+    and figure objects for the subclasses use it to plot the features
+    '''
+    fig_styles = ["white_grid", "dark_grid", "white", "dark", "ticks"]
+    fig_contexts = ["paper", "notebook", "talk", "poster"]
+
     def __init__(self, fig_style=None, fig_context=None):
+        '''
+        Create Visualizer with default Figure and Axies objects
+
+        Parameters
+        ----------
+        fig_style : TYPE, optional
+            DESCRIPTION. The default is None.
+        fig_context : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Raises
+        ------
+        exp
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
         self.logger = logging.getLogger(__name__)
-        if fig_style == None:
-            self.fig_style=Visualizer.fig_styles[2]
+        if fig_style is None:
+            self.fig_style = Visualizer.fig_styles[2]
         elif fig_style not in str(Visualizer.fig_styles):
-            raise exp.CrewmlAttributeError("Invalid filg_style passed:"+fig_style)
+            raise exp.CrewmlAttributeError(
+                "Invalid filg_style passed:"+fig_style)
         else:
-            self.fig_style=fig_style
-            
-        if fig_context == None:
-            self.fig_context=Visualizer.fig_contexts[2]
+            self.fig_style = fig_style
+
+        if fig_context is None:
+            self.fig_context = Visualizer.fig_contexts[2]
         elif fig_context not in str(Visualizer.fig_contexts):
-            raise exp.CrewmlAttributeError("Invalid filg_style passed:"+fig_context)
+            raise exp.CrewmlAttributeError(
+                "Invalid filg_style passed:"+fig_context)
         else:
-            self.fig_style=fig_style      
-            
+            self.fig_style = fig_style
+
         self.fig, self.axes_subplot = plt.subplots(nrows=1, ncols=1)
-        self.x=10
-        self.y=10
-        self.titles=None
-        self.total_plots=1
-        self.total_figures=1
-        self.x_labels=None
-        self.y_lables=None
-        
-                         
-    def set_fig_style(self,fig_style):
-        self.fig_style=fig_style
+        self.x = 10
+        self.y = 10
+        self.titles = None
+        self.total_plots = 1
+        self.total_figures = 1
+        self.x_labels = None
+        self.y_lables = None
 
-    def set_fig_context(self,fig_style):
-        self.fig_style=fig_style
-                        
-    def set_range(self,x,y):
-        self.x=x
-        self.y=y
-        
-    def set_total_plots(self,total_plots):
-        self.total_plots=total_plots
-        self.fig, self.axes_subplot = plt.subplots(nrows=self.total_plots, ncols=self.total_plots)
-        self.fig.tight_layout() 
-        plt.xticks(fontsize= 2)
-        plt.yticks(fontsize= 2)
+    def set_fig_style(self, fig_style):
+        '''
+         Set one of the values: white_grid", "dark_grid", "white", "dark",
+         "ticks"
+
+        Parameters
+        ----------
+        fig_style : str
+            DESCRIPTION.
+
+        Raises
+        ------
+        exp
+            CrewmlAttributeError.
+
+        Returns
+        -------
+        None.
+
+        '''
+        if fig_style not in str(Visualizer.fig_styles):
+            raise exp.CrewmlAttributeError(
+                "Invalid filg_style passed:"+fig_style)
+        self.fig_style = fig_style
+
+    def set_fig_context(self, fig_context):
+        '''
+        set the figure context "paper", "notebook", "talk", "poster"
+
+        Parameters
+        ----------
+        fig_context : str
+            DESCRIPTION.
+
+        Raises
+        ------
+        exp
+            CrewmlAttributeError.
+
+        Returns
+        -------
+        None.
+
+        '''
+
+        if fig_context not in str(Visualizer.fig_contexts):
+            raise exp.CrewmlAttributeError(
+                "Invalid filg_style passed:"+fig_context)
+        self.fig_context = fig_context
+
+    def set_range(self, x, y):
+        '''
+
+
+        Parameters
+        ----------
+        x : TYPE
+            DESCRIPTION.
+        y : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        self.x = x
+        self.y = y
+
+    def set_total_plots(self, total_plots):
+        '''
+        Set the total plots to plot
+
+        Parameters
+        ----------
+        total_plots : numeric
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+
+        self.total_plots = total_plots
+        self.fig, self.axes_subplot = plt.subplots(
+            nrows=self.total_plots, ncols=self.total_plots)
+        self.fig.tight_layout()
+        plt.xticks(fontsize=2)
+        plt.yticks(fontsize=2)
         plt.show()
- 
-   
 
-    def set_titles(self,titles):
-        if len(titles) != self.total_plots :
-            raise exp.CrewmlValueError("total number of titles must to equal to \
-                total_plots:total_plots")
-        
-    def set_xlabels(self,x_labels):   
-       self.x_labels=x_labels
+    def set_titles(self, titles):
+        '''
+        Parameters
+        ----------
+        titles : TYPE
+            DESCRIPTION.
+
+        Raises
+        ------
+        exp
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        if len(titles) != self.total_plots:
+            raise exp.CrewmlValueError("total number of titles must to \
+                        equal to total_plots:total_plots")
+
+    def set_xlabels(self, x_labels):
+        '''
+
+
+        Parameters
+        ----------
+        x_labels : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        self.x_labels = x_labels
 
 
 class RelationalPlot(Visualizer):
-    types=["scatter","line"]
+    '''
+     This class extends Visualizer and has functions to draw Seaborn Relational
+     plots by taking the features from the Feature object. It plots
+     maximum of 16 plots in one Figure object mostly using default font
+     and color.
+    '''
+    plot_types = ["scatter", "line"]
+
     def __init__(self, feature):
-        self.feature=feature
-        self.type=None
-        self.name=self.feature.get_feature_name()
+        '''
+        Create RelationalPlot with Feature object
 
-        
-    def plot_numeric_features(self, type):
-        if type not in str(RelationalPlot.types):
-            raise exp.CrewmlAttributeError("Invalid RelationalPlot type passed:"+type)
-            
-        num_list=self.feature.get_numeric_x_y()
+        Parameters
+        ----------
+        feature : Feature
+            Featiure object.
+
+        Returns
+        -------
+        None.
+
+        '''
+        self.feature = feature
+        self.type = None
+        self.name = self.feature.get_feature_name()
+
+    def plot_numeric_features(self, plot_type):
+        '''
+        This function plots numeric features
+
+        Parameters
+        ----------
+        plot_type : str
+            "scatter", "line"
+
+        Raises
+        ------
+        exp
+            CrewmlAttributeError.
+
+        Returns
+        -------
+        None.
+
+        '''
+
+        if plot_type not in str(RelationalPlot.plot_types):
+            raise exp.CrewmlAttributeError(
+                "Invalid RelationalPlot type passed:"+plot_type)
+
+        num_list = self.feature.get_numeric_x_y()
         if len(num_list) > 16:
-            raise exp.CrewmlAttributeError("Total Number of Numeric features exceeded 12:"+num_list)
+            raise exp.CrewmlAttributeError(
+                "Total Number of Numeric features exceeded 16:"+num_list)
 
-        
-        
-        #This will create 4X4 matrix of Figure and AxesSubPlot objects that can be used
-        #to plot maximum of 16 graphs in one figure. 
+        # This will create 4X4 matrix of Figure and AxesSubPlot objects
+        # that can be used to plot maximum of 16 graphs in one figure.
         self.set_total_plots(4)
-        self.fig.suptitle(self.name+"-Two feature Scatter Plot", fontsize=20) 
-        data=self.feature.all_features()
-        k=0        
-        for i in range(4):           
+        self.fig.suptitle(self.name+"-Two feature Plot-" /
+                          +plot_type, fontsize=20)
+        data = self.feature.all_features()
+        k = 0
+        for i in range(4):
             for j in range(4):
-                num_x_y=num_list[k]
-                print("i=, j=, k=",i,j,k)
-                sns.scatterplot(ax=self.axes_subplot[i][j],data=data, x=num_x_y[0], y=num_x_y[1])
+                num_x_y = num_list[k]
+                print("i=, j=, k=", i, j, k)
+                if plot_type == "scatter":
+                    sns.scatterplot(
+                        ax=self.axes_subplot[i][j], data=data, x=num_x_y[0],
+                        y=num_x_y[1])
+                else:
+                    sns.lineplot(
+                        ax=self.axes_subplot[i][j], data=data, x=num_x_y[0],
+                        y=num_x_y[1])
                 self.axes_subplot[i][j].set_xlabel(num_x_y[0], fontsize=7)
                 self.axes_subplot[i][j].set_ylabel(num_x_y[1], fontsize=7)
-                k+=1
-                if k== 10:
+                k += 1
+                if k == 10:
                     return
-            
-            
 
-        
-    
+
 class DistributionPlot(Visualizer):
     def __init__(self):
         pass
-    
+
+
 class CategorialPlot(Visualizer):
     def __init__(self):
         pass
+
 
 class RegressionPlot(Visualizer):
     def __init__(self):
