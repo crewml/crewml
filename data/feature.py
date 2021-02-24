@@ -220,6 +220,21 @@ class Feature:
         num_x_y = list(itertools.combinations(num_list, 2))
 
         return num_x_y
+    
+    def get_cat_x_y(self):
+        '''
+        Return all the unique pairs of categorical features as per the config file
+
+        Returns
+        -------
+        num_x_y : List
+            List contains pair of numerical features
+
+        '''
+        num_list = self.con.get_value("flight_plot", "cat_dist").split(",")
+        num_x_y = list(itertools.combinations(num_list, 2))
+
+        return num_x_y    
 
     def get_feature_name(self):
         '''

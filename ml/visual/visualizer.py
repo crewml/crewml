@@ -76,14 +76,13 @@ class Visualizer:
         else:
             self.fig_style = fig_style
 
-        self.fig, self.axes_subplot = plt.subplots(nrows=1, ncols=1)
+        self.fig=None
+        self.axes_subplot =None
         self.x = 10
         self.y = 10
         self.titles = None
         self.total_plots = 1
         self.total_figures = 1
-        self.x_labels = None
-        self.y_lables = None
 
     def set_fig_style(self, fig_style):
         '''
@@ -175,6 +174,7 @@ class Visualizer:
         self.fig.tight_layout()
         plt.xticks(fontsize=2)
         plt.yticks(fontsize=2)
+        plt.legend(fontsize='small', title_fontsize='5')
         plt.show()
 
     def set_titles(self, titles):
@@ -220,11 +220,13 @@ class RelationalPlot(Visualizer):
      This class extends Visualizer and has functions to draw Seaborn Relational
      plots by taking the features from the Feature object. It plots
      maximum of 16 plots in one Figure object mostly using default font
-     and color.
+     and color.It is mainly used to visualize the relationship between
+     two numerical features or two numerical features with a third 
+     categorical featuer
     '''
     plot_types = ["scatter", "line"]
 
-    def __init__(self, feature):
+    def __init__(self, feature, fig_style=None, fig_context=None):
         '''
         Create RelationalPlot with Feature object
 
@@ -241,8 +243,9 @@ class RelationalPlot(Visualizer):
         self.feature = feature
         self.type = None
         self.name = self.feature.get_feature_name()
+        super().__init__()
 
-    def plot_numeric_features(self, plot_type):
+    def plot_numeric_features(self, plot_type, hue=None):
         '''
         This function plots numeric features
 
@@ -267,15 +270,15 @@ class RelationalPlot(Visualizer):
                 "Invalid RelationalPlot type passed:"+plot_type)
 
         num_list = self.feature.get_numeric_x_y()
-        if len(num_list) > 16:
+        tot_num_list=len(num_list)
+        if tot_num_list> 16:
             raise exp.CrewmlAttributeError(
                 "Total Number of Numeric features exceeded 16:"+num_list)
 
         # This will create 4X4 matrix of Figure and AxesSubPlot objects
         # that can be used to plot maximum of 16 graphs in one figure.
         self.set_total_plots(4)
-        self.fig.suptitle(self.name+"-Two feature Plot-" /
-                          +plot_type, fontsize=20)
+        self.fig.suptitle(self.name+"-Two feature Plot-" +plot_type, fontsize=20)
         data = self.feature.all_features()
         k = 0
         for i in range(4):
@@ -285,28 +288,48 @@ class RelationalPlot(Visualizer):
                 if plot_type == "scatter":
                     sns.scatterplot(
                         ax=self.axes_subplot[i][j], data=data, x=num_x_y[0],
-                        y=num_x_y[1])
+                        y=num_x_y[1], hue=hue)
                 else:
                     sns.lineplot(
                         ax=self.axes_subplot[i][j], data=data, x=num_x_y[0],
-                        y=num_x_y[1])
+                        y=num_x_y[1], hue=hue)
                 self.axes_subplot[i][j].set_xlabel(num_x_y[0], fontsize=7)
                 self.axes_subplot[i][j].set_ylabel(num_x_y[1], fontsize=7)
                 k += 1
-                if k == 10:
+                if k == tot_num_list:
                     return
 
+    def plot_num_cat_features(self, plot_type):
+        '''
+        This function uses the plot_numeric_features to plot all the numeric
+        features with categorical features. Each Category along with numeric 
+        features plotted in a seperate Figure object
+
+        Parameters
+        ----------
+        plot_type : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        cat_feat_names=self.feature.categorical_feature_names()
+        for cat in cat_feat_names:
+            self.plot_numeric_features(plot_type,hue=cat)
+        
 
 class DistributionPlot(Visualizer):
     def __init__(self):
-        pass
+        super().__init__()
 
 
 class CategorialPlot(Visualizer):
     def __init__(self):
-        pass
+        super().__init__()
 
 
 class RegressionPlot(Visualizer):
     def __init__(self):
-        pass
+        super().__init__()
