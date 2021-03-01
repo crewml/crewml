@@ -27,6 +27,7 @@ import logging
 import pandas as pd
 import os
 import itertools
+import numpy as np
 
 from crewml.config import config
 import crewml.common as st
@@ -152,6 +153,9 @@ class Feature:
         '''
         return self.con.getValue("flight_date_features").split(",")
 
+    def all_feature_names(self):
+        return list(self.df)
+
     def all_features(self):
         '''
         Retrun the loaded DataFrame with all the features
@@ -169,7 +173,8 @@ class Feature:
 
     def numeric_features(self):
         '''
-        Return the numeric features only
+        Return the numeric features only. It repalces empty values with "0"
+        and converts all columns to int
 
         Returns
         -------
@@ -179,7 +184,14 @@ class Feature:
         '''
         feat = self.con.getValue("flight_numeric_features")
         feat = feat.split(",")
-        return self.df[feat]
+
+        df = self.df[feat]
+
+        # replace empty values with '0' and convert all columns to int
+        df = df.replace(np.nan, '0', regex=True)
+        df = df.astype(int)
+
+        return df
 
     def categorical_features(self):
         '''
@@ -220,10 +232,11 @@ class Feature:
         num_x_y = list(itertools.combinations(num_list, 2))
 
         return num_x_y
-    
+
     def get_cat_x_y(self):
         '''
-        Return all the unique pairs of categorical features as per the config file
+        Return all the unique pairs of categorical features as per the
+        config file
 
         Returns
         -------
@@ -234,7 +247,7 @@ class Feature:
         num_list = self.con.get_value("flight_plot", "cat_dist").split(",")
         num_x_y = list(itertools.combinations(num_list, 2))
 
-        return num_x_y    
+        return num_x_y
 
     def get_feature_name(self):
         '''
@@ -248,3 +261,6 @@ class Feature:
         '''
 
         return self.feature_name
+
+    def get_max_plots(self):
+        return int(self.con.getValue(self.feature_name+"_max_plots"))

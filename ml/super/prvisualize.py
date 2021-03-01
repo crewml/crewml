@@ -36,9 +36,6 @@ from crewml.common import DATA_DIR
 import logging
 
 
-
-
-
 '''
 feature selection methods
 Filter methods
@@ -55,6 +52,7 @@ Mutual Selection (non-linear models)
 
 '''
 
+
 class PairingVisualizer:
     def __init__(self, feature_file):
         '''
@@ -70,13 +68,13 @@ class PairingVisualizer:
         None.
 
         '''
-        
+
         self.logger = logging.getLogger(__name__)
-        self.feature_file=feature_file
-        self.pairing_df=None
-        
-        print("feature_file=",feature_file)
-    
+        self.feature_file = feature_file
+        self.pairing_df = None
+
+        print("feature_file=", feature_file)
+
     def process(self):
         '''
         process pairing data and prepare for visualization
@@ -88,36 +86,46 @@ class PairingVisualizer:
         '''
         self.pairing_df = pd.read_csv(DATA_DIR+self.feature_file)
         self.logger.info("Pairing data read from:", self.feature_file)
-        
-        self.pairing_df.drop(self.pairing_df.filter(regex="Unname"),axis=1, inplace=True)
-                
-        #convert time to seconds
-        self.pairing_df['FltTime']=pd.to_timedelta(self.pairing_df['FltTime']).dt.seconds
-        self.pairing_df['totDutyTm']=pd.to_timedelta(self.pairing_df['totDutyTm']).dt.seconds
-        self.pairing_df['totPairingUTC']=pd.to_timedelta(self.pairing_df['totPairingUTC']).dt.seconds
-        
-        #convert datetime into second
-        self.pairing_df['OrgUTC']=pd.to_datetime(self.pairing_df['OrgUTC'])
-        self.pairing_df['OrgUTC']=self.pairing_df.OrgUTC.astype(int)
-        
-        self.pairing_df['DestUTC']=pd.to_datetime(self.pairing_df['DestUTC'])
-        self.pairing_df['DestUTC']=self.pairing_df.OrgUTC.astype(int)
-        
-        self.pairing_df['dtyRelTmUTC']=pd.to_datetime(self.pairing_df['dtyRelTmUTC'])
-        self.pairing_df['dtyRelTmUTC']=self.pairing_df.dtyRelTmUTC.astype(int)
-        
-        self.pairing_df['dtyRepTmUTC']=pd.to_datetime(self.pairing_df['dtyRepTmUTC'])
-        self.pairing_df['dtyRepTmUTC']=self.pairing_df.OrgUTC.astype(int)
 
-        #Convert flight date to int
-        self.pairing_df['FlightDate'] = self.pairing_df['FlightDate'].astype(str)
-        
-        self.pairing_df['FlightDate']=self.pairing_df.FlightDate.str.replace("-","").astype(int)
-    
+        self.pairing_df.drop(self.pairing_df.filter(
+            regex="Unname"), axis=1, inplace=True)
+
+        # convert time to seconds
+        self.pairing_df['FltTime'] = pd.to_timedelta(
+            self.pairing_df['FltTime']).dt.seconds
+        self.pairing_df['totDutyTm'] = pd.to_timedelta(
+            self.pairing_df['totDutyTm']).dt.seconds
+        self.pairing_df['totPairingUTC'] = pd.to_timedelta(
+            self.pairing_df['totPairingUTC']).dt.seconds
+
+        # convert datetime into second
+        self.pairing_df['OrgUTC'] = pd.to_datetime(self.pairing_df['OrgUTC'])
+        self.pairing_df['OrgUTC'] = self.pairing_df.OrgUTC.astype(int)
+
+        self.pairing_df['DestUTC'] = pd.to_datetime(self.pairing_df['DestUTC'])
+        self.pairing_df['DestUTC'] = self.pairing_df.OrgUTC.astype(int)
+
+        self.pairing_df['dtyRelTmUTC'] = pd.to_datetime(
+            self.pairing_df['dtyRelTmUTC'])
+        self.pairing_df['dtyRelTmUTC'] = self.pairing_df.dtyRelTmUTC.astype(
+            int)
+
+        self.pairing_df['dtyRepTmUTC'] = pd.to_datetime(
+            self.pairing_df['dtyRepTmUTC'])
+        self.pairing_df['dtyRepTmUTC'] = self.pairing_df.OrgUTC.astype(int)
+
+        # Convert flight date to int
+        self.pairing_df['FlightDate'] = self.pairing_df['FlightDate'].astype(
+            str)
+
+        self.pairing_df['FlightDate'] = self.pairing_df.FlightDate.str.replace(
+            "-", "").astype(int)
+
     '''
     Create box plot for the pairing data retrieved and processed from the process
     function
     '''
+
     def plot_box(self):
         '''
         Display box plot of pairing data
@@ -127,12 +135,13 @@ class PairingVisualizer:
         None.
 
         '''
-        self.pairing_df.groupby('Origin').boxplot(fontsize=15,rot=50,figsize=(30,30),patch_artist=True)
+        self.pairing_df.groupby('Origin').boxplot(
+            fontsize=15, rot=50, figsize=(30, 30), patch_artist=True)
         plt.show()
- 
+
     def encode_pairing_feature(self):
         '''
-        Use the TargetEncoder to encode Origin, Dest, TailNumber features, these 
+        Use the TargetEncoder to encode Origin, Dest, TailNumber features, these
         feature has alphanumeric and this function converts it to numeric using
         TargetEncoder
 
@@ -141,26 +150,28 @@ class PairingVisualizer:
         None.
 
         '''
-        temp1=self.pairing_df[self.pairing_df['pairingId'].isnull()]
-        temp1['pairingId']=0
-        temp2=self.pairing_df[~self.pairing_df['fltID'].isin(temp1.fltID)]
-        temp2['pairingId']=1
-        self.pairing_df=temp1.append(temp2)
-        
-        #Use TargetEncoder to encode the flight Origin and Destination 
+        temp1 = self.pairing_df[self.pairing_df['pairingId'].isnull()]
+        temp1['pairingId'] = 0
+        temp2 = self.pairing_df[~self.pairing_df['fltID'].isin(temp1.fltID)]
+        temp2['pairingId'] = 1
+        self.pairing_df = temp1.append(temp2)
+
+        # Use TargetEncoder to encode the flight Origin and Destination
         encoder = TargetEncoder()
-        self.pairing_df['Origin'] = encoder.fit_transform(self.pairing_df['Origin'], self.pairing_df['cost'])
+        self.pairing_df['Origin'] = encoder.fit_transform(
+            self.pairing_df['Origin'], self.pairing_df['cost'])
         encoder = TargetEncoder()
-        self.pairing_df['Dest'] = encoder.fit_transform(self.pairing_df['Dest'], self.pairing_df['cost'])
+        self.pairing_df['Dest'] = encoder.fit_transform(
+            self.pairing_df['Dest'], self.pairing_df['cost'])
         encoder = TargetEncoder()
-        self.pairing_df['Tail_Number'] = encoder.fit_transform(self.pairing_df['Tail_Number'], self.pairing_df['cost'])
-        
-        #print column name with total nan values in it
-        nan_col_count=self.pairing_df.isna().sum()
+        self.pairing_df['Tail_Number'] = encoder.fit_transform(
+            self.pairing_df['Tail_Number'], self.pairing_df['cost'])
+
+        # print column name with total nan values in it
+        nan_col_count = self.pairing_df.isna().sum()
         logging.info("Number of NA values for each feature")
         logging.info(nan_col_count)
-    
-  
+
     def plot_histogram(self):
         '''
         Plot histogram graph for the pairing feature
@@ -174,29 +185,27 @@ class PairingVisualizer:
         plt.xlabel('Cost')
         plt.ylabel('# of occurance')
         plt.show()
-        
-      
+
     def calculate_Correlations(self):
         '''
-        Default it uses Pearson corralation coefficient that goes from -1 to 1  
-        
+        Default it uses Pearson corralation coefficient that goes from -1 to 1
+
 
         Returns
         -------
         None.
 
         '''
-        
+
         correlations = self.pairing_df.corr()
-        plt.figure(figsize=(12,10))
+        plt.figure(figsize=(12, 10))
         sns.heatmap(correlations, annot=True, cmap=plt.cm.Reds)
         correlations = correlations['cost']
         logging.info(correlations)
-   
-    
+
     def plot_scatter(self, feature):
         '''
-        plot passed-in feature with the target "cost" to visualize the corralation  
+        plot passed-in feature with the target "cost" to visualize the corralation
 
         Parameters
         ----------
@@ -208,16 +217,14 @@ class PairingVisualizer:
         None.
 
         '''
-        #plot each feature with the target "cost" to visualize the corralation 
+        # plot each feature with the target "cost" to visualize the corralation
         self.pairing_df.plot.scatter(x=feature, y='cost')
         plt.show()
-        
-    
 
     def plot_pivot(self, feature):
         '''
         plot pivot for the passed-in feature
-        
+
         Parameters
         ----------
         feature : TYPE
@@ -228,15 +235,15 @@ class PairingVisualizer:
         None.
 
         '''
-        #Pivot plot shows the relationship between two features or a feature/target
-        pivot = pd.pivot_table(self.pairing_df.sample(10), values='cost', index=[feature], aggfunc=np.mean)
+        # Pivot plot shows the relationship between two features or a feature/target
+        pivot = pd.pivot_table(self.pairing_df.sample(
+            10), values='cost', index=[feature], aggfunc=np.mean)
         pivot.plot(kind='bar')
         plt.show()
-        
-  
+
     def plot_pair(self, feature):
         '''
-        pairplot gives histogram of all the numerical features along the diagonal and shows the 
+        pairplot gives histogram of all the numerical features along the diagonal and shows the
         graph between two features
 
         Parameters
@@ -249,10 +256,10 @@ class PairingVisualizer:
         None.
 
         '''
-        sns.set_style("whitegrid");
-        #sns.pairplot(abs(self.pairing_df.sample(1000)),size=3)
+        sns.set_style("whitegrid")
+        # sns.pairplot(abs(self.pairing_df.sample(1000)),size=3)
         sns.pairplot(self.pairing_df.sample(1000), hue=feature, size=3)
-        sns.boxplot(x=feature,y='cost',data=self.pairing_df.sample(10))
+        sns.boxplot(x=feature, y='cost', data=self.pairing_df.sample(10))
         plt.show()
 
     def plot_join_plot(self, feature, target):
@@ -271,25 +278,22 @@ class PairingVisualizer:
         None.
 
         '''
-        j = sns.jointplot(feature, target, data = self.pairing_df, kind = 'reg')
+        j = sns.jointplot(feature, target, data=self.pairing_df, kind='reg')
         j.annotate(stats.pearsonr)
         plt.show()
 
 
-        
-        
-'''    
-gf=GenericFeature()    
+'''
+gf=GenericFeature()
 flight_df=gf.load()
 flight_df.to_csv("flights.csv")
 '''
-import seaborn as sns
 
-flight_df=pd.read_csv("flights.csv")
-flight_df['FL_DATE']=pd.to_datetime(flight_df['FL_DATE'])
-flight_df=flight_df.sample(100)
-nan_val=flight_df.isnull().values.any()
-flight_df=flight_df.fillna(0)
+flight_df = pd.read_csv("flights.csv")
+flight_df['FL_DATE'] = pd.to_datetime(flight_df['FL_DATE'])
+flight_df = flight_df.sample(100)
+nan_val = flight_df.isnull().values.any()
+flight_df = flight_df.fillna(0)
 flight_df = flight_df.loc[:, ~flight_df.columns.str.contains('^Unnamed')]
 sns.set(style="whitegrid", font_scale=0.1)
 #sns.set_theme(style="darkgrid", font_scale=0.1,palette="deep")
@@ -305,10 +309,10 @@ Currently, bivariate plots (x and y) are available only for histograms and KDEs:
 #sns.displot(data=flight_df, x="DISTANCE", hue="DEST",  kind="kde")
 #sns.displot(data=flight_df, x="DISTANCE", hue="DEST",   multiple="stack")
 #sns.displot(data=flight_df, x="DISTANCE", col="DEST", aspect=.7, multiple="stack")
-#sns.relplot(data=flight_df, x="DISTANCE", y="TAIL_NUM", row="DEST", hue="ORIGIN", col="AIR_TIME") #hangs
-#sns.relplot(data=flight_df, kind="line") #only numeric/date
+# sns.relplot(data=flight_df, x="DISTANCE", y="TAIL_NUM", row="DEST", hue="ORIGIN", col="AIR_TIME") #hangs
+# sns.relplot(data=flight_df, kind="line") #only numeric/date
 #sns.scatterplot(data=flight_df, x="FL_DATE", y="DISTANCE", style="DEST", hue="CRS_DEP_TIME")
-#sns.lineplot(data=flight_df, x="FL_DATE", y="DISTANCE", style="DEST", hue="CRS_DEP_TIME") good one
+# sns.lineplot(data=flight_df, x="FL_DATE", y="DISTANCE", style="DEST", hue="CRS_DEP_TIME") good one
 '''
 sns.lineplot(
     data=flight_df, x="FL_DATE", y="DISTANCE",
@@ -337,12 +341,12 @@ sns.histplot(data=flight_df, x="DISTANCE", hue="FL_DATE", element="poly")
 sns.histplot(flight_df, x="DISTANCE", y="FL_DATE", hue="DEST")
 sns.ecdfplot(data=flight_df, x="DISTANCE", hue="FL_DATE", complementary=True)
 '''
-#sns.kdeplot(data=flight_df)
-#sns.kdeplot(data=flight_df,x="DISTANCE")
+# sns.kdeplot(data=flight_df)
+# sns.kdeplot(data=flight_df,x="DISTANCE")
 #sns.kdeplot(data=flight_df,x="DISTANCE", y="FL_DATE")
 
-#sns.rugplot(data=flight_df)
-#sns.rugplot(data=flight_df,x="DISTANCE")
+# sns.rugplot(data=flight_df)
+# sns.rugplot(data=flight_df,x="DISTANCE")
 
 #sns.scatterplot(data=flight_df,x="DISTANCE", y="FL_DATE")
 #sns.rugplot(data=flight_df,x="DISTANCE", y="FL_DATE")
@@ -354,7 +358,7 @@ sns.ecdfplot(data=flight_df, x="DISTANCE", hue="FL_DATE", complementary=True)
 '''
 
 sns.set_theme(style="ticks")
-sns.set_context("paper", rc={"font.size":4,"axes.titlesize":4,"axes.labelsize":10}) 
+sns.set_context("paper", rc={"font.size":4,"axes.titlesize":4,"axes.labelsize":10})
 g = sns.catplot(x="FL_DATE", y="DISTANCE", hue="DEST", kind="violin",data=flight_df)
 '''
 #ax = sns.boxplot(x=flight_df["DISTANCE"])
@@ -478,41 +482,10 @@ g.plot(sns.scatterplot, sns.histplot)
 
 #g = sns.lmplot(x="CRS_DEP_TIME", y="DISTANCE", hue="AIR_TIME", data=flight_df)
 #g = sns.regplot(x="CRS_DEP_TIME", y="DISTANCE", data=flight_df, color="r", marker="+")
-g = sns.regplot(x="CRS_DEP_TIME", y="DISTANCE", data=flight_df, color="r", marker="+",x_estimator=np.mean)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+g = sns.regplot(x="CRS_DEP_TIME", y="DISTANCE", data=flight_df,
+                color="r", marker="+", x_estimator=np.mean)
 
 
 '''
 flight_df=flight_df.drop(["FL_DATE","MKT_UNIQUE_CARRIER","TAIL_NUM","DEST","ORIGIN"], axis=1, inplace=True)
 '''
-
-
-
-        
-    
