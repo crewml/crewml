@@ -392,16 +392,21 @@ class CategorialPlot(Visualizer):
         if plot_type not in str(CategorialPlot.scatter_plot_type):
             raise exp.CrewmlAttributeError(
                 "Invalid CategorialPlot type passed:"+plot_type)
-        feature_names = self.feature.numeric_feature_names()
-        data = self.feature.numeric_features()
-        data = data.apply(pd.to_numeric)
+
+        if plot_type == CategorialPlot.scatter_plot_type[6]:
+            feature_names = self.feature.categorical_feature_names()
+            data = self.feature.categorical_features()
+        else:
+            feature_names = self.feature.numeric_feature_names()
+            data = self.feature.numeric_features()
+            data = data.apply(pd.to_numeric)
         tot_plots = len(feature_names)
 
         if tot_plots > self.feature.get_max_plots():
             print("total plots exceeded allowable max \
                   plots: total_plots and max_plots",
                   tot_plots, self.feature.get_max_plots())
-        tot_plots = self.feature.get_max_plots()
+            tot_plots = self.feature.get_max_plots()
 
         # total tot_plots, with 3 columns in one figure
         self.set_total_plots(tot_plots, 3)

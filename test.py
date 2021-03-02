@@ -17,7 +17,8 @@ print(df.dtypes)
 
 
 cp = vis.CategorialPlot(feature)
-cp.plot_univariate(plot_type="count")
+cp.plot_univariate(plot_type="point")
+
 
 
 '''
