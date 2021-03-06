@@ -157,7 +157,7 @@ class Visualizer:
         # Create main figure
         self.fig = plt.figure(1)
         self.fig.tight_layout()
-        # plt.legend(fontsize='small', title_fontsize='5')
+        plt.legend(fontsize='small', title_fontsize='5')
         # self.fig.subplots_adjust(hspace=2)
         # self.fig.subplots_adjust(wspace=1)
 
@@ -165,8 +165,6 @@ class Visualizer:
             # add every single subplot to the figure with a for loop
             ax = self.fig.add_subplot(rows, total_columns, position[k])
             self.axes_subplot.append(ax)
-
-        # plt.legend(fontsize='small', title_fontsize='5')
 
     def set_titles(self, titles):
         '''
@@ -378,8 +376,8 @@ class DistributionPlot(Visualizer):
 
 
 class CategorialPlot(Visualizer):
-    scatter_plot_type = ["strip", "swarm",
-                         "box", "violin", "point", "bar", "count"]
+    plot_type = ["strip", "swarm",
+                 "box", "violin", "point", "bar", "count"]
 
     def __init__(self, feature, sample=True):
         self.feature = feature
@@ -389,7 +387,7 @@ class CategorialPlot(Visualizer):
 
     # stripplot swarmplot
     def plot_univariate(self, plot_type):
-        if plot_type not in str(CategorialPlot.scatter_plot_type):
+        if plot_type not in str(CategorialPlot.plot_type):
             raise exp.CrewmlAttributeError(
                 "Invalid CategorialPlot type passed:"+plot_type)
 
@@ -414,44 +412,53 @@ class CategorialPlot(Visualizer):
             data = data.sample(1000)
 
         for i in range(tot_plots):
-            if plot_type == CategorialPlot.scatter_plot_type[0]:
+            if plot_type == CategorialPlot.plot_type[0]:
                 sns.stripplot(data=data,
                               ax=self.axes_subplot[i],
                               x=feature_names[i])
-            elif plot_type == CategorialPlot.scatter_plot_type[1]:
+            elif plot_type == CategorialPlot.plot_type[1]:
                 sns.swarmplot(data=data,
                               ax=self.axes_subplot[i],
                               x=feature_names[i])
-            elif plot_type == CategorialPlot.scatter_plot_type[2]:
+            elif plot_type == CategorialPlot.plot_type[2]:
                 sns.boxplot(data=data,
                             ax=self.axes_subplot[i],
                             x=feature_names[i])
-            elif plot_type == CategorialPlot.scatter_plot_type[3]:
+            elif plot_type == CategorialPlot.plot_type[3]:
                 sns.violinplot(data=data,
                                ax=self.axes_subplot[i],
                                x=feature_names[i])
-            elif plot_type == CategorialPlot.scatter_plot_type[4]:
+            elif plot_type == CategorialPlot.plot_type[4]:
                 sns.pointplot(data=data,
                               ax=self.axes_subplot[i],
                               x=feature_names[i])
-            elif plot_type == CategorialPlot.scatter_plot_type[5]:
+            elif plot_type == CategorialPlot.plot_type[5]:
                 sns.barplot(data=data,
                             ax=self.axes_subplot[i],
                             x=feature_names[i])
-            elif plot_type == CategorialPlot.scatter_plot_type[6]:
+            elif plot_type == CategorialPlot.plot_type[6]:
                 sns.countplot(data=data,
                               ax=self.axes_subplot[i],
                               x=feature_names[i])
 
     def plot_bivariate(self, plot_type, hue=False):
-        if plot_type not in str(CategorialPlot.scatter_plot_type):
+        if plot_type not in str(CategorialPlot.plot_type):
             raise exp.CrewmlAttributeError(
                 "Invalid CategorialPlot type passed:"+plot_type)
+
+        if plot_type == CategorialPlot.plot_type[6]:
+            feature_names = self.feature.get_category_x_y_z()
+            data = self.feature.categorical_features()
 
         num_feature_names = self.feature.numeric_feature_names()
         cat_feature_names = self.feature.categorical_feature_names()
 
-        feature_names = list(itertools.combinations(num_feature_names, 2))
+        if hue is False:
+            feature_names = [num_feature_names, cat_feature_names]
+            feature_names = list(itertools.product(*feature_names))
+        else:
+            feature_names = self.feature.get_num_cat_x_y_z()
+
         tot_plots = len(feature_names)
 
         if tot_plots > self.feature.get_max_plots():
@@ -462,49 +469,184 @@ class CategorialPlot(Visualizer):
 
         # total tot_plots, with 3 columns in one figure
         self.set_total_plots(tot_plots, 3)
-        data = self.feature.all_features()
+        data = self.feature.numeric_cat_features()
         if self.sample is True:
             data = data.sample(100)
         # relace all NA column values with 0 string value
         data = data.replace(np.nan, '0', regex=True)
-        data = data.astype(str)
 
         for i in range(tot_plots):
+            self.axes_subplot[i].set_xlabel(feature_names[i][0], fontsize=7)
+            self.axes_subplot[i].set_ylabel(feature_names[i][1], fontsize=7)
             if hue is False:
-                if plot_type == CategorialPlot.scatter_plot_type[0]:
+                if plot_type == CategorialPlot.plot_type[0]:
                     sns.stripplot(data=data,
                                   ax=self.axes_subplot[i],
                                   x=feature_names[i][0],
                                   y=data[feature_names[i][1]])
-                elif plot_type == CategorialPlot.scatter_plot_type[1]:
+                elif plot_type == CategorialPlot.plot_type[1]:
                     sns.swarmplot(data=data,
                                   ax=self.axes_subplot[i],
                                   x=feature_names[i][0],
                                   y=feature_names[i][1])
-                elif plot_type == CategorialPlot.scatter_plot_type[2]:
+                elif plot_type == CategorialPlot.plot_type[2]:
                     sns.boxplot(data=data,
                                 ax=self.axes_subplot[i],
                                 x=feature_names[i][0],
                                 y=feature_names[i][1])
-                elif plot_type == CategorialPlot.scatter_plot_type[3]:
-                    sns.violinlot(data=data,
+                elif plot_type == CategorialPlot.plot_type[3]:
+                    sns.violinplot(data=data,
+                                   ax=self.axes_subplot[i],
+                                   x=feature_names[i][0],
+                                   y=feature_names[i][1])
+                elif plot_type == CategorialPlot.plot_type[4]:
+                    sns.poinplot(data=data,
+                                 ax=self.axes_subplot[i],
+                                 x=feature_names[i][0],
+                                 y=feature_names[i][1])
+                elif plot_type == CategorialPlot.plot_type[5]:
+                    sns.barplot(data=data,
+                                ax=self.axes_subplot[i],
+                                x=feature_names[i][0],
+                                y=feature_names[i][1])
+                # countplot can take either x or y so hue used for y
+                elif plot_type == CategorialPlot.plot_type[6]:
+                    sns.countplot(data=data,
                                   ax=self.axes_subplot[i],
                                   x=feature_names[i][0],
-                                  y=feature_names[i][1])
+                                  hue=feature_names[i][1])
             else:
-                for j in range(len(cat_feature_names)):
-                    if plot_type == CategorialPlot.scatter_plot_type[0]:
+                for i in range(len(cat_feature_names)):
+                    if plot_type == CategorialPlot.plot_type[0]:
                         sns.stripplot(data=data,
                                       ax=self.axes_subplot[i],
                                       x=feature_names[i][0],
                                       y=feature_names[i][1],
-                                      hue=num_feature_names[j])
-                    else:
+                                      hue=feature_names[i][2])
+                    elif plot_type == CategorialPlot.plot_type[1]:
                         sns.swarmplot(data=data,
                                       ax=self.axes_subplot[i],
                                       x=feature_names[i][0],
                                       y=feature_names[i][1],
-                                      hue=num_feature_names[j])
+                                      hue=feature_names[i][2])
+                    elif plot_type == CategorialPlot.plot_type[2]:
+                        sns.boxplot(data=data,
+                                    ax=self.axes_subplot[i],
+                                    x=feature_names[i][0],
+                                    y=feature_names[i][1],
+                                    hue=feature_names[i][2])
+                    elif plot_type == CategorialPlot.plot_type[3]:
+                        sns.violinplot(data=data,
+                                       ax=self.axes_subplot[i],
+                                       x=feature_names[i][0],
+                                       y=feature_names[i][1],
+                                       hue=feature_names[i][2])
+                    elif plot_type == CategorialPlot.plot_type[4]:
+                        sns.pointplot(data=data,
+                                      ax=self.axes_subplot[i],
+                                      x=feature_names[i][0],
+                                      y=feature_names[i][1],
+                                      hue=feature_names[i][2])
+                    elif plot_type == CategorialPlot.plot_type[5]:
+                        sns.barplot(data=data,
+                                    ax=self.axes_subplot[i],
+                                    x=feature_names[i][0],
+                                    y=feature_names[i][1],
+                                    hue=feature_names[i][2])
+                    elif plot_type == CategorialPlot.plot_type[6]:
+                        raise exp.CrewmlValueError(
+                            "Cannot have countplot with x,y,hue")
+
+
+class MatrixPlot(Visualizer):
+    plot_type = ["heat", "cluster"]
+
+    def __init__(self, feature, sample=True):
+        self.feature = feature
+        self.name = self.feature.get_feature_name()
+        self.sample = sample
+        super().__init__()
+
+    def plot(self, plot_type):
+        if plot_type not in str(MatrixPlot.plot_type):
+            raise exp.CrewmlAttributeError(
+                "Invalid MatrixPlot type passed:"+plot_type)
+
+        num_cat_x_y = self.feature.get_date_num_cat_x_y_z()
+        data = self.feature.date_cat_numeric_features()
+
+        if self.sample is True:
+            data = data.sample(100)
+        data = data.replace(np.nan, '0', regex=True)
+
+        # total tot_plots, with 3 columns in one figure
+        tot_plots = len(num_cat_x_y)
+        self.set_total_plots(tot_plots, 3)
+
+        for i in range(len(num_cat_x_y)):
+            pivot_data = pd.pivot_table(data, values=num_cat_x_y[i][1],
+                                        index=[num_cat_x_y[i][2]],
+                                        columns=num_cat_x_y[i][0])
+            pivot_data = pivot_data.replace(np.nan, '0', regex=True)
+            pivot_data = pivot_data.astype(float)
+
+            if plot_type == MatrixPlot.plot_type[0]:
+                sns.heatmap(data=pivot_data, ax=self.axes_subplot[i],)
+            else:
+                sns.clustermap(data=pivot_data, ax=self.axes_subplot[i],)
+
+
+class MultiPlot(Visualizer):
+    plot_type = ["pair", "joint"]
+    plot_kind = ['scatter', 'kde', 'hist', 'reg', "hex", "resid"]
+
+    def __init__(self, feature, sample=True):
+        self.feature = feature
+        self.name = self.feature.get_feature_name()
+        self.sample = sample
+        super().__init__()
+
+    def plot(self, plot_type, plot_kind="scatter", hue=False):
+        if plot_type not in str(MultiPlot.plot_type):
+            raise exp.CrewmlAttributeError(
+                "Invalid MultiPlot type passed:"+plot_type)
+
+        if plot_kind not in str(MultiPlot.plot_kind):
+            raise exp.CrewmlAttributeError(
+                "Invalid MultiPlot kind passed:"+plot_kind)
+
+        data = self.feature.all_features()
+        if self.sample is True:
+            data = data.sample(100)
+
+        if plot_type == MultiPlot.plot_type[0]:
+            if plot_kind == MultiPlot.plot_kind[4] or \
+                    plot_kind == MultiPlot.plot_kind[5]:
+                raise exp.CrewmlAttributeError(
+                    "Invalid MultiPlot kind passed:"+plot_kind)
+
+            if hue is False:
+                sns.pairplot(data)
+            else:
+                cat_feature_names = self.feature.get_feature_name()
+                for i in range(len(cat_feature_names)):
+                    sns.pairplot(data, hue=cat_feature_names[i])
+        else:
+            if hue is False:
+                feature_names = self.feature.get_numeric_x_y()
+                for i in range(len(feature_names)):
+                    sns.jointplot(
+                        data=data,
+                        x=feature_names[i][0],
+                        y=feature_names[i][1])
+            else:
+                feature_names = self.feature.get_num_num_cat()
+                for i in range(len(feature_names)):
+                    sns.jointplot(
+                        data=data,
+                        x=feature_names[i][0],
+                        y=feature_names[i][1],
+                        hue=feature_names[i][2])
 
 
 class RegressionPlot(Visualizer):

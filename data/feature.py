@@ -193,6 +193,23 @@ class Feature:
 
         return df
 
+    def numeric_cat_features(self):
+        df1 = self.numeric_features()
+        df2 = self.categorical_features()
+        df = pd.concat([df1, df2], axis=1)
+
+        return df
+
+    def date_cat_numeric_features(self):
+        df1 = self.numeric_features()
+        df2 = self.categorical_features()
+        df3 = self.date_features()
+        #df1 = df1.astype(float)
+        df3 = pd.to_datetime(df3).dt.strftime("%Y%m%d")
+        df = pd.concat([df3, df2, df1], axis=1)
+
+        return df
+
     def categorical_features(self):
         '''
         Return Categorical features only
@@ -233,6 +250,21 @@ class Feature:
 
         return num_x_y
 
+    def get_category_x_y_z(self):
+        '''
+        Return all the unique 3-typle of category features as per the config file
+
+        Returns
+        -------
+        num_x_y : List
+            List contains pair of numerical features
+
+        '''
+        cat_list = self.con.get_value("flight_plot", "cat_dist").split(",")
+        cat_x_y_z = list(itertools.combinations(cat_list, 3))
+
+        return cat_x_y_z
+
     def get_cat_x_y(self):
         '''
         Return all the unique pairs of categorical features as per the
@@ -248,6 +280,57 @@ class Feature:
         num_x_y = list(itertools.combinations(num_list, 2))
 
         return num_x_y
+
+    def get_num_cat_x_y_z(self):
+        cat1 = self.categorical_feature_names()
+        cat2 = self.categorical_feature_names()
+        num = self.numeric_feature_names()
+        feat = [num, cat1, cat2]
+        coms = list(itertools.product(*feat))
+        num_cat_x_y_z = []
+
+        for i in range(len(coms)):
+            if coms[i][0] == coms[i][1] or coms[i][1] == coms[i][2] \
+                    or coms[i][0] == coms[i][2]:
+                continue
+            else:
+                num_cat_x_y_z.append(coms[i])
+
+        return num_cat_x_y_z
+    
+    def get_num_num_cat(self):
+        cat = self.categorical_feature_names()
+        num1 = self.numeric_feature_names()
+        num2 = self.numeric_feature_names()
+        feat = [num1, num2, cat]
+        coms = list(itertools.product(*feat))
+        num_num_cat = []
+
+        for i in range(len(coms)):
+            if coms[i][0] == coms[i][1] or coms[i][1] == coms[i][2] \
+                    or coms[i][0] == coms[i][2]:
+                continue
+            else:
+                num_num_cat.append(coms[i])
+
+        return num_num_cat    
+
+    def get_date_num_cat_x_y_z(self):
+        cat = self.categorical_feature_names()
+        dt = self.date_feature_names()
+        num = self.numeric_feature_names()
+        feat = [dt, num, cat]
+        coms = list(itertools.product(*feat))
+        date_num_cat_x_y_z = []
+
+        for i in range(len(coms)):
+            if coms[i][0] == coms[i][1] or coms[i][1] == coms[i][2] \
+                    or coms[i][0] == coms[i][2]:
+                continue
+            else:
+                date_num_cat_x_y_z.append(coms[i])
+
+        return date_num_cat_x_y_z
 
     def get_feature_name(self):
         '''
