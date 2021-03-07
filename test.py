@@ -1,5 +1,5 @@
 import crewml.data.feature as fet
-import crewml.ml.visual.visualizer as vis
+import crewml.visual.visualizer as vis
 
 import itertools
 

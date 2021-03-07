@@ -40,10 +40,15 @@ data we generated the Pairing and used it to create the ML models.
     * simulation
         * pairing            
     * ml
+        * visualizer
+        * prreg
+        * prlogreg
     * config
         * resources
     * log
     * data
+        * download
+        * feature
     * docs
 
 
@@ -66,6 +71,9 @@ CostCalculator – Calculates cost associated with each pairing.
 
 ## ml package
 Following are the important modules of ml package:
+visualizer - Contains various classes to plot graphs using seaborn
+prlogreg - Pairing logistic Regression model
+prreg - Pairing Regression model
 
 ## config package
 ConfigHolder – Manges config parameters used by simulation and ml packages
@@ -73,7 +81,9 @@ ConfigHolder – Manges config parameters used by simulation and ml packages
 log – contains log files
 
 data – contains *.csv data used by the simulation and ml packages
-
+download - A class that helps to download flight data from Amazon 
+S3 and validates data with signature defined in the config file. 
+feature - This class contains the data downloaded from S3.
 
 ## Pairing Level Rules
 * Pairing must start and end with same crew base.
