@@ -24,13 +24,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 import traceback
-from simul.pairing import flclean as fl
-from config import config
-from simul.pairing import flclassify
-from simul.pairing import dutygen as dg
-from simul.pairing import pairinggen as pg
-from simul.pairing import costcal as cc
-import common as st
+from crewml.simul.pairing import flclean as fl
+from crewml.config import config
+from crewml.simul.pairing import flcat
+from crewml.simul.pairing import dutygen as dg
+from crewml.simul.pairing import pairinggen as pg
+from crewml.simul.pairing import costcal as cc
+import crewml.common as st
+from crewml.data import feature as fet
 
 
 def main():
@@ -52,41 +53,41 @@ def main():
         # Create FlightCleaner object, load the flights, use the timezone
         # to convert the local departure and arrival time to
         # UTC time
-        raw_input_file = ch.getValue("raw_input_file")
         timezone_file = ch.getValue("timezone_file")
         clean_output = ch.getValue("clean_output_file")
         dutygen_files = ch.getValue("dutygen_files").split(",")
 
-        elements = ch.getValue("elements")
+        elements = ch.getValue("flight_features")
         elements = elements.split(",")
-        column_name = ch.getValue("column_name")
-        airline_code = ch.getValue("airline_code")
+
+        feature = fet.Feature()
 
         logger.info("Creating FlightCleaner object")
-        fc = fl.FlightCleaner(raw_input_file,
-                              timezone_file,
-                              clean_output,
-                              elements,
-                              column_name,
-                              airline_code)
+        fc = fl.FlightCleaner(timezone_file_name=timezone_file,
+                              feature=feature,
+                              output_file_name=clean_output
+                              )
+
         logger.info("Starting FlightCleaner process to clean the flight data")
-        fc.process()
+        # fc.process()
         logger.info("Finished FlightCleaner process to clean the flight data")
 
         dl_fa_bases = ch.getValue("dl_fa_bases")
         dl_fa_non_bases = ch.getValue("dl_fa_non_bases")
-        classify_output_files = ch.getValue("classify_output_files")
-        logger.info("Creating FlightClassifer object")
-        fc = flclassify.FlightClassifer(
+        classify_output_files = ch.getValue("cat_output_files").split(",")
+        logger.info("Creating FlightCategorizer object")
+        fc = flcat.FlightCategorizer(
             dl_fa_bases, dl_fa_non_bases, clean_output, classify_output_files)
-        logger.info("Starting FlightClassifer process to classify the flights")
-        fc.process()
-        logger.info("Finished FlightClassifer process to classify the flights")
+        logger.info(
+            "Starting FlightCategorizer process to classify the flights")
+        # fc.process()
+        logger.info(
+            "Finished FlightCategorizer process to classify the flights")
 
         logger.info("Creating DutyGenerator object")
         d = dg.DutyGenerator(dutygen_files)
         logger.info("Starting DutyGenerator process to create Duties")
-        d.process()
+        # d.process()
         logger.info("Finished DutyGenerator process to create Duties")
 
         pairing_gen_output_file = ch.getValue("pairing_gen_output_file")
@@ -121,7 +122,7 @@ def main():
 
 if __name__ == '__main__':
     import logging.config
-    logging.config.fileConfig(st.LOG_DIR+'logging.ini',
+    logging.config.fileConfig(st.RESOURCE_DIR+'logging.ini',
                               disable_existing_loggers=False)
 
     main()

@@ -1,6 +1,7 @@
 #ignored directories
 download/
 rawdata/
+files/
 log/
 *.zip
 *.csv

@@ -34,6 +34,7 @@ import crewml.common as st
 from crewml.exception import CrewmlDataError
 
 
+
 class Feature:
     '''
      This class encapsulates DataFrame with features
@@ -204,7 +205,6 @@ class Feature:
         df1 = self.numeric_features()
         df2 = self.categorical_features()
         df3 = self.date_features()
-        #df1 = df1.astype(float)
         df3 = pd.to_datetime(df3).dt.strftime("%Y%m%d")
         df = pd.concat([df3, df2, df1], axis=1)
 
@@ -252,7 +252,8 @@ class Feature:
 
     def get_category_x_y_z(self):
         '''
-        Return all the unique 3-typle of category features as per the config file
+        Return all the unique 3-typle of category features
+        as per the config file
 
         Returns
         -------
@@ -297,7 +298,7 @@ class Feature:
                 num_cat_x_y_z.append(coms[i])
 
         return num_cat_x_y_z
-    
+
     def get_num_num_cat(self):
         cat = self.categorical_feature_names()
         num1 = self.numeric_feature_names()
@@ -313,7 +314,7 @@ class Feature:
             else:
                 num_num_cat.append(coms[i])
 
-        return num_num_cat    
+        return num_num_cat
 
     def get_date_num_cat_x_y_z(self):
         cat = self.categorical_feature_names()

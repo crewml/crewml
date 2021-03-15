@@ -23,14 +23,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-import logging.config
 import os
 
 
 ROOT_DIR = os.getcwd()
-DATA_DIR=ROOT_DIR+"/crewml/rawdata/"
+DATA_DIR = ROOT_DIR+"/crewml/data/files/"
 RESOURCE_DIR = ROOT_DIR+"/crewml/config/resources/"
-
-
+LOG_DIR = ROOT_DIR+"/crewml/log/"
 
 print(DATA_DIR)

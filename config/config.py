@@ -26,9 +26,6 @@ SOFTWARE.
 '''
 
 
-
-
-
 """
 Created on Tue Dec  1 09:16:58 2020
 
@@ -38,58 +35,53 @@ __copyright__ ="Copyright 2020 Xcel Energy, Inc"
 """
 
 
-import configparser
+
+
 import logging
 import traceback
-
-
-
-
-
+import configparser
 class ConfigHolder:
-   section_names=["flight_data", "download"]
- 
-   def __init__(self, *file_names):
-       '''
-       This class reads the configuration data from the passed file names. The file names
-       must be in *.ini format wih section and parameters below the section
+    section_names = ["flight_data", "download", "flight_plot"]
 
-       Parameters
-       ----------
-       *file_names : TYPE
-           Name of the configuration file  "resources/pairing_config.ini"
+    def __init__(self, *file_names):
+        '''
+        This class reads the configuration data from the passed file names.
+        The file namesmust be in *.ini format wih section and parameters
+        below the section
 
-       Raises
-       ------
-       ValueError
-           Specified Config file not found error
+        Parameters
+        ----------
+        *file_names : TYPE
+            Name of the configuration file  "resources/pairing_config.ini"
 
-       Returns
-       -------
-       None.
+        Raises
+        ------
+        ValueError
+            Specified Config file not found error
 
-       '''
-       try:
-           self.logger=logging.getLogger(__name__)
-           
-           self.parser = configparser.ConfigParser()
-           self.parser.optionxform = str  # make option names case sensitive
-           self.logger.debug("Opening config file(s) %s",file_names)
-           found = self.parser.read(file_names)
-           
-           if not found:
-               raise ValueError('No config file(s) found',file_names)
-           for name in ConfigHolder.section_names:
-                self.__dict__.update(self.parser.items(name)) 
-       except Exception as e:
+        Returns
+        -------
+        None.
+
+        '''
+        try:
+            self.logger = logging.getLogger(__name__)
+
+            self.parser = configparser.ConfigParser()
+            self.parser.optionxform = str  # make option names case sensitive
+            self.logger.debug("Opening config file(s) %s", file_names)
+            found = self.parser.read(file_names)
+
+            if not found:
+                raise ValueError('No config file(s) found', file_names)
+            for name in ConfigHolder.section_names:
+                self.__dict__.update(self.parser.items(name))
+        except Exception as e:
             self.logger.error(traceback.format_exc())
             raise
-            
-   def getValue(self,key):
-      return self.__dict__.get(key)
-  
-   def get_value(self,section_name,key):
-       return self.parser.get(section_name, key)
 
+    def getValue(self, key):
+        return self.__dict__.get(key)
 
-    
+    def get_value(self, section_name, key):
+        return self.parser.get(section_name, key)
