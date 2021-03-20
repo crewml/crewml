@@ -67,7 +67,9 @@ class PairingGenerator:
                 regex="Unname"), axis=1, inplace=True)
 
             final_df.to_csv(st.DATA_DIR+self.output_file)
-            self.logger.info("flight pairing data write to:", self.output_file)
+            self.logger.info("flight pairing data file %s \
+                             created with size:%s", \
+                                 self.output_file, len(final_df))
         except Exception as e:
             self.logger.error(traceback.format_exc())
             raise

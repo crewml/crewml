@@ -80,14 +80,14 @@ def main():
             dl_fa_bases, dl_fa_non_bases, clean_output, classify_output_files)
         logger.info(
             "Starting FlightCategorizer process to classify the flights")
-        # fc.process()
+        fc.process()
         logger.info(
             "Finished FlightCategorizer process to classify the flights")
 
         logger.info("Creating DutyGenerator object")
         d = dg.DutyGenerator(dutygen_files)
         logger.info("Starting DutyGenerator process to create Duties")
-        # d.process()
+        #d.process()
         logger.info("Finished DutyGenerator process to create Duties")
 
         pairing_gen_output_file = ch.getValue("pairing_gen_output_file")
@@ -99,7 +99,7 @@ def main():
             pairing_gen_missing_files,
             pairing_gen_output_file)
         logger.info("Starting PairingGenerator process to create Pairings")
-        pgen.process()
+        #pgen.process()
         logger.info("Finished PairingGenerator process to create Pairings")
 
         cost_cal_input_file = ch.getValue("cost_cal_input_file")
@@ -110,7 +110,7 @@ def main():
         logger.info(
             "Starting CostCalculator process to create cost for each fligh \
             in the Pairings")
-        costcal.process()
+        #costcal.process()
         logger.info(
             "Finished CostCalculator process to create cost for \
                 each fligh in the Pairings")

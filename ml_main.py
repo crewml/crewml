@@ -27,11 +27,9 @@ SOFTWARE.
 
 import traceback
 import os.path
-import common as st
-from config import config
-from ml.super import prvisualize as prv
-from ml.super import prreg as prr
-from ml.super import prlogreg as prlg 
+import crewml.common as st
+from crewml.config import config
+from crewml.ml.super import prlogreg as prlg 
 
 
 
@@ -54,31 +52,22 @@ def main():
         
         data_path=os.path.dirname(__file__)
         
-        ch=config.ConfigHolder(st.LOG_DIR+"pairing_config.ini")
+        ch=config.ConfigHolder(st.RESOURCE_DIR+"pairing_config.ini")
 
 
         pairing_input_file=ch.getValue("cost_cal_output_file")
        
-        '''
-        Creating PairingVisualizer to visualize the pairing data
-        '''
-        pv=prv.PairingVisualizer(pairing_input_file)
-        pv.process()
-        pv.plot_box()
-        pv.encode_pairing_feature()
-        pv.plot_histogram()
-        pv.plot_scatter("Dest")
-        pv.plot_pivot("Dest")
-        pv.plot_pair("Dest")
+ 
         
         '''
         Use PairingRegressor to create Regression Model
-        '''
+        
         pr=prr.PairingRegressor(pairing_input_file)
         pr.process()
         pr.split_feature()
         pr.perfom_decision_tree_regressor()
         pr.perform_xgboost_regressor()
+        '''
         
         '''
         Use PairingLogRegressor to crete Logistic Regression Model
@@ -87,8 +76,8 @@ def main():
         plr.process()
         plr.split_feature()
         plr.decision_tree_classifier()
-        plr.gradient_boost_classifier()
-        plr.random_forest_classifier()
+        # plr.gradient_boost_classifier()
+        # plr.random_forest_classifier()
         
         
         logger.info("Finished main")
@@ -98,7 +87,7 @@ def main():
     
 if __name__ == '__main__':
     import logging.config
-    logging.config.fileConfig(st.LOG_DIR+'logging.ini',disable_existing_loggers=False)
+    logging.config.fileConfig(st.RESOURCE_DIR+'logging.ini',disable_existing_loggers=False)
 
     main()
 

@@ -98,11 +98,15 @@ class FlightCategorizer:
             b2b_fl_pair_df.to_csv(DATA_DIR+self.classify_files[0])
             df1.to_csv(DATA_DIR+self.classify_files[1])
 
-            self.logger.debug("b2b Total=", len(b2b_df))
-            self.logger.debug("len of b2b_fl_pair_df=", len(b2b_fl_pair_df))
-            self.logger.debug("len of b2b_fl_missing=", len(df1))
-            self.logger.debug("difference=", len(b2b_df) -
-                              (len(df1)+len(b2b_fl_pair_df)))
+            self.logger.info("b2b Total=", len(b2b_df))
+            self.logger.info("len of file %s:%s",
+                             self.classify_files[0], len(b2b_fl_pair_df))
+            self.logger.info("len of file %s:%s",
+                             self.classify_files[1], len(df1))
+            self.logger.info("difference between %s and %s=%s",
+                             self.classify_files[0], self.classify_files[1],
+                             len(b2b_df) -
+                             (len(df1)+len(b2b_fl_pair_df)))
 
             # departure base to arrival non-base flight
             b2nb_df = self.group_flights(b2nb)
@@ -115,11 +119,12 @@ class FlightCategorizer:
             # df=self.calculateDuty(df2)
             b2nb_nb2b_pair_df.to_csv(DATA_DIR+self.classify_files[2])
             df2.to_csv(DATA_DIR+self.classify_files[3])
-            self.logger.debug("len of b2nb_nb2b_pair_df=",
-                              len(b2nb_nb2b_pair_df))
-            self.logger.debug("len of df2=", len(df2))
+            self.logger.info("len of %s=%s", self.classify_files[2],
+                             len(b2nb_nb2b_pair_df))
+            self.logger.info("len of %s=%s", self.classify_files[3],
+                             len(df2))
 
-            self.logger.debug("total=", len(
+            self.logger.info("total=", len(
                 b2b_fl_pair_df)+len(df1)+len(nb2nb_df) +
                 len(b2nb_nb2b_pair_df)+len(df2))
         except Exception as e:
@@ -202,7 +207,7 @@ class FlightCategorizer:
     This method creates flight pairs for B2NB and NB2B.These two
     pairs will be combined to create a Duty.
     B2NB - Flights departs from Base airport and arrives to non base airport
-    NB2B - Floghts dpearts from non base airport and arrives to base airport
+    NB2B - Flights dpearts from non base airport and arrives to base airport
     '''
 
     def assemble_B2NB_NB2B_flights(self, df1, df2):
@@ -221,33 +226,38 @@ class FlightCategorizer:
         df1 = df1.sort_values('ORIGIN_UTC')
         df2 = df2.sort_values('ORIGIN_UTC')
 
-        for index, row in df1.iterrows():
+        for index, first_fl_pair in df1.iterfirst_fl_pairs():
             print("len of final_duty_df=", len(final_duty_df))
-            org_airport = row["ORIGIN"]
-            dest_airport = row["DEST"]
-            temp = df2[(df2.ORIGIN == dest_airport)
+            org_airport = first_fl_pair["ORIGIN"]
+            dest_airport = first_fl_pair["DEST"]
+            # Collect all the matching fligh pairs for the second pair
+            matching_fl_pairs = df2[(df2.ORIGIN == dest_airport)
                        & (df2.DEST == org_airport)]
-            total = len(temp)
+            total = len(matching_fl_pairs)
+            matching_fl_pairs.reset_index(drop=True, inplace=True)
+            
+            # for each one of first_fl_pair loop through matching_fl_pairs
+            # to find a matching matching flight pair if second pair flgiht
+            # ORIGIN_UTC > first_fl_pair DEST_UTC+40 min
 
             i = 0
             temp1 = ""
             while(i < total):
-                if temp.iloc[i].ORIGIN_UTC > row['DEST_UTC'] + \
+                if matching_fl_pairs.iloc[i].ORIGIN_UTC > first_fl_pair['DEST_UTC'] + \
                         datetime.timedelta(minutes=+45):
-                    temp1 = temp.iloc[i]
+                    temp1 = matching_fl_pairs.iloc[i]
                     break
                 else:
                     i += 1
                     continue
-            print("len of temp1=", len(temp1))
-            if(len(temp1) > 0):
-                del_id = temp1.FLT_ID
-                final_duty_df = final_duty_df.append(row)
-                final_duty_df = final_duty_df.append(temp1)
 
-                df2 = df2[df2.FLT_ID != del_id]
+            if(len(temp1) > 0):
+                del_id = temp1.FL_ID
+                final_duty_df = final_duty_df.append(first_fl_pair)
+                final_duty_df = final_duty_df.append(temp1)
+                df2 = df2[df2.FL_ID != del_id]
             else:
-                missing_df = missing_df.append(row)
+                missing_df = missing_df.append(first_fl_pair)
 
         missing_df = missing_df.append(df2)
 

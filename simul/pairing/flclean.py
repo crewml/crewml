@@ -88,7 +88,8 @@ class FlightCleaner:
                     ]), axis=1))
 
             self.flights_df.to_csv(DATA_DIR + self.output_file_name)
-            self.logger.info('Filecreated:', self.output_file_name)
+            self.logger.info('File created:%s and size %s', \
+                             self.output_file_name, len(self.flights_df))
         except Exception as e:
 
             self.logger.error(traceback.format_exc())

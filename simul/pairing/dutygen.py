@@ -69,6 +69,8 @@ class DutyGenerator:
             all_df = self.calculate_duty_period(all_df)
 
             all_df.to_csv(st.DATA_DIR+self.files[2])
+            self.logger.info("%s file generated with size %s:", \
+                             self.files[2],len(all_df))
         except Exception as e:
             self.logger.error(traceback.format_exc())
             raise
