@@ -26,12 +26,9 @@ SOFTWARE.
 
 
 import traceback
-import os.path
 import crewml.common as st
 from crewml.config import config
-from crewml.ml.super import prlogreg as prlg 
-
-
+from crewml.ml.super import prlogreg as prlg
 
 
 def main():
@@ -46,48 +43,43 @@ def main():
 
     try:
         logger = logging.getLogger(__name__)
-    
-    
+
         logger.info("Starting main")
-        
-        data_path=os.path.dirname(__file__)
-        
-        ch=config.ConfigHolder(st.RESOURCE_DIR+"pairing_config.ini")
 
+        ch = config.ConfigHolder(st.RESOURCE_DIR+"pairing_config.ini")
 
-        pairing_input_file=ch.getValue("cost_cal_output_file")
-       
- 
-        
+        pairing_input_file = ch.getValue("cost_cal_output_file")
+
         '''
         Use PairingRegressor to create Regression Model
-        
+
         pr=prr.PairingRegressor(pairing_input_file)
         pr.process()
         pr.split_feature()
         pr.perfom_decision_tree_regressor()
         pr.perform_xgboost_regressor()
         '''
-        
+
         '''
         Use PairingLogRegressor to crete Logistic Regression Model
         '''
-        plr=prlg.PairingLogRegressor(pairing_input_file)
+        plr = prlg.PairingLogRegressor(pairing_input_file)
         plr.process()
         plr.split_feature()
-        plr.decision_tree_classifier()
+        # plr.decision_tree_classifier()
         # plr.gradient_boost_classifier()
         # plr.random_forest_classifier()
-        
-        
+        plr.xgboost_model_parms()
+        # plr.xgboost_classifier()
+
         logger.info("Finished main")
-    except Exception as e: 
+    except Exception as e:
         logger.error(traceback.format_exc())
 
-    
+
 if __name__ == '__main__':
     import logging.config
-    logging.config.fileConfig(st.RESOURCE_DIR+'logging.ini',disable_existing_loggers=False)
+    logging.config.fileConfig(
+        st.RESOURCE_DIR+'logging.ini', disable_existing_loggers=False)
 
     main()
-

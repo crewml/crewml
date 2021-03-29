@@ -25,29 +25,23 @@ SOFTWARE.
 '''
 
 import pandas as pd
-import os.path
 from category_encoders import TargetEncoder
-import pandas as pd
 import numpy as np
-from sklearn import model_selection
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import Ridge
-from sklearn.linear_model import Lasso
-from sklearn.linear_model import ElasticNet
-from sklearn.neighbors import KNeighborsRegressor
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVR
-from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
-from math import sqrt
 from sklearn import ensemble
-import matplotlib.pyplot as plt
-import _pickle as cPickle
 from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.metrics import f1_score
+import xgboost as xgb
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score
 import logging
 from crewml.common import DATA_DIR
+from sklearn.metrics import matthews_corrcoef
+from sklearn.metrics import balanced_accuracy_score
+import crewml.common as st
+import pickle
+from sklearn import preprocessing
+from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 
 
 class PairingLogRegressor:
@@ -83,6 +77,10 @@ class PairingLogRegressor:
 
         '''
         self.pairing_df = pd.read_csv(DATA_DIR+self.feature_file)
+
+        pair_freq = self.select_pairings(100)
+        self.pairing_df = self.pairing_df.loc[self.pairing_df['PAIRING_ID']
+                                              .isin(pair_freq['index1'])]
         self.pairing_df.drop(self.pairing_df.filter(
             regex="Unname"), axis=1, inplace=True)
         # convert timedetal to seconds
@@ -131,26 +129,35 @@ class PairingLogRegressor:
         self.pairing_df['TAIL_NUM'] = encoder.fit_transform(
             self.pairing_df['TAIL_NUM'], self.pairing_df['PAIRING_ID'])
 
-        del self.pairing_df['ORIGIN']
-        del self.pairing_df['DEST']
-        del self.pairing_df['TAIL_NUM']
-
-        pairing_ids = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        self.pairing_df = self.pairing_df.loc[self.pairing_df
-                                              ['PAIRING_ID'].isin(pairing_ids)]
         self.remove_duty_columns()
-        # self.pairing_df = self.pairing_df.sample(1000)
-        # self.clean_pairing()
-
-        # remove rows with empty PAIRING_ID
-        # temp1=self.pairing_df[self.pairing_df['PAIRING_ID'].isnull()]
-        # self.pairing_df=self.pairing_df-temp1
-
-        print("Null values=", self.pairing_df.isnull().sum())
 
         self.target_df = pd.DataFrame()
         self.target_df['PAIRING_ID'] = self.pairing_df['PAIRING_ID']
+        self.encode_pairing()
         del self.pairing_df['PAIRING_ID']
+
+    def select_pairings(self, total):
+        '''
+        This function selects total pairings to be given to the model.
+        Instead of passing all the pairings, we can select "total" number of
+        pairings to train and test the model. There are many pairing exist
+        with only two flights in it and it is not enough to train a pairing
+        category just with two flights. Until we can get more data by
+        combining multiple months or improving our pairing generation
+        algorithm to incude more flights for a given pairing, this function
+        will choose top "total" pairings which has more flights in it.
+
+        Returns
+        -------
+        pair_freq : pairing frequencey
+
+        '''
+        pair_freq = self.pairing_df['PAIRING_ID'].value_counts(dropna=False)
+        pair_freq = pair_freq[:total]
+        pair_freq = pair_freq.to_frame()
+        pair_freq['index1'] = pair_freq.index
+
+        return pair_freq
 
     def clean_pairing(self):
         '''
@@ -169,6 +176,16 @@ class PairingLogRegressor:
 
         self.pairing_df[indices_to_keep].astype(np.float64)
 
+    def encode_pairing(self):
+        # Use label encoder to encode the target pairing Ids to start from
+        # 0, 1, 2, ... XGBoost requires target to start from 0 instead of
+        # random PAIRING_IDs selected from
+        le = preprocessing.LabelEncoder()
+        le.fit(self.target_df)
+
+        encoded = le.transform(self.target_df)
+        self.target_df = pd.DataFrame(encoded, columns=['PAIRING_ID'])
+
     def split_feature(self):
         '''
         Splits Pairing feature into test and train data sets
@@ -177,10 +194,12 @@ class PairingLogRegressor:
         None.
 
         '''
+
         # Split data into train and test
         self.X_train, self.X_test, self.y_train, \
             self.y_test = train_test_split(
-                self.pairing_df, self.target_df, test_size=0.30, random_state=40)
+                self.pairing_df, self.target_df,
+                test_size=0.30, random_state=40)
 
     def decision_tree_classifier(self):
         '''
@@ -247,8 +266,7 @@ class PairingLogRegressor:
     def random_forest_classifier(self):
         '''
         Using the train and test data crete GradientBoostingClassifier
-        to train and test the
-        Pairing data
+        to train and test the Pairing data
 
         Returns
         -------
@@ -276,10 +294,164 @@ class PairingLogRegressor:
         print("RandomForest Test Classification Report")
         print(classification_report(self.y_test, pred_test_xg_for))
 
+    def perform_coross_validation(self, xgb_model):
+        # find cross validation
+        # score XGBClassifier
+        f1_micro = cross_val_score(
+            xgb_model, self.pairing_df, self.target_df,
+            cv=5, scoring='f1_micro')
+        f1_macro = cross_val_score(
+            xgb_model, self.pairing_df, self.target_df,
+            cv=5, scoring='f1_macro')
+        f1_weighted = cross_val_score(
+            xgb_model, self.pairing_df, self.target_df,
+            cv=5, scoring='f1_weighted')
+        neg_log_loss = cross_val_score(
+            xgb_model, self.pairing_df, self.target_df,
+            cv=5, scoring='neg_log_loss')
+        # roc not supported for multi class
+        # roc_auc = cross_val_score(
+        #    xgb_model, self.pairing_df, self.target_df,
+        #    cv=5, scoring='roc_auc')
+
+        print("f1_micro %0.2f accuracy with a standard deviation of %0.2f" %
+              (f1_micro.mean(), f1_micro.std()))
+        print("f1_macro %0.2f accuracy with a standard deviation of %0.2f" %
+              (f1_macro.mean(), f1_macro.std()))
+        print("f1_weighted %0.2f accuracy with a standard \
+              deviation of %0.2f" %
+              (f1_weighted.mean(), f1_weighted.std()))
+        print("neg_log_loss %0.2f accuracy with a standard \
+              deviation of %0.2f" %
+              (neg_log_loss.mean(), neg_log_loss.std()))
+
+        scores = cross_val_score(xgb_model, self.pairing_df, self.target_df)
+        print("Cross validation %0.2f accuracy with a standard \
+              deviation of %0.2f" %
+              (scores.mean(), scores.std()))
+
+    def xgboost_classifier(self):
+        '''
+        Using the train and test data crete XGBClassifier
+        to train and test the Pairing data
+
+        Returns
+        -------
+        None.
+
+        '''
+        xgb_model = xgb.XGBClassifier(
+            booster="gbtree",
+            # error evaluation for multiclass training
+            objective="multi:softmax",
+            n_gpus=0,
+            n_jobs=-1,
+            gamma=0,
+            max_depth=4,
+            learning_rate=0.01,
+            use_label_encoder=False,
+            n_estimators=1000,
+            num_class=len(self.target_df.PAIRING_ID.unique()),
+            eval_metric="mlogloss",
+            verbosity=1,
+            min_child_weight=10
+            # gamma=gamma,
+            # reg_alpha=reg_alpha,
+            # max_depth=max_depth,
+            # subsample=subsample,
+            # colsample_bytree= colsample_bytree,
+            # min_child_weight= min_child_weight,
+            # params
+        )
+        print("total num_classes=", len(self.target_df.PAIRING_ID.unique()))
+
+        self.perform_coross_validation(xgb_model)
+
+        xgb_model.fit(self.X_train, self.y_train)
+
+        # print("XGBoost Train  Confusion Matrix:")
+        # print(confusion_matrix(self.y_train, pred_train_xg_for))
+
+        xgboost_predictions = xgb_model.predict(self.X_test)
+        print("XGBoost Test  Confusion Matrix:")
+        print(confusion_matrix(self.y_test, xgboost_predictions))
+
+        print("XGBoost Test Classification Report")
+        print(classification_report(self.y_test, xgboost_predictions))
+
+        accuracy = accuracy_score(self.y_test, xgboost_predictions)
+        print("Accuracy: %.2f%%" % (accuracy * 100.0))
+
+        matt_score = matthews_corrcoef(self.y_test, xgboost_predictions)
+        print("matthews_corrcoef=%s" % matt_score)
+
+        balanced_score = balanced_accuracy_score(
+            self.y_test, xgboost_predictions)
+        print("balanced_accuracy_score=%s" % balanced_score)
+
+        '''
+        getting IndexError: too many indices for array:
+        array is 1-dimensional, but 2 were indexed
+        hinge_loss_score = hinge_loss(self.y_test,
+                                      xgboost_predictions,
+                                      labels=self.target_df)
+        print("hinge_loss_score=%s" % hinge_loss_score)
+        '''
+
+        # dump model with feature map
+        pickle.dump(xgb_model, open(st.DATA_DIR+"/model/xgboost.dat", "wb"))
+
     def remove_duty_columns(self):
-        self.pairing_df.drop(['DUTY_REP_TM_UTC',
-                              'DUTY_REL_TM_UTC',
-                              'NEW_DUTY_ID',
-                              'TOT_DUTY_TM',
-                              'TOT_PAIRING_UTC',
-                              'LAYOVER'], axis=1)
+        self.pairing_df = self.pairing_df.drop(['DUTY_REP_TM_UTC',
+                                                'DUTY_REL_TM_UTC',
+                                                'NEW_DUTY_ID',
+                                                'TOT_DUTY_TM',
+                                                'TOT_PAIRING_UTC',
+                                                'LAYOVER'], axis=1)
+
+    def xgboost_model_parms(self):
+        params = {
+            "learning_rate": [0.05, 0.10, 0.15, 0.20, 0.25, 0.30],
+            "max_depth": [3, 4, 5, 6, 8, 10, 12, 15],
+            "min_child_weight": [1, 3, 5, 7],
+            "gamma": [0.0, 0.1, 0.2, 0.3, 0.4],
+            "colsample_bytree": [0.3, 0.4, 0.5, 0.7]
+
+        }
+        classifier = xgb.XGBClassifier()
+        random_search = RandomizedSearchCV(classifier,
+                                           param_distributions=params,
+                                           n_iter=5,
+                                           scoring='roc_auc',
+                                           n_jobs=-1,
+                                           cv=5,
+                                           verbose=1)
+        self.encode_pairing()
+        random_search.fit(self.pairing_df,
+                          self.target_df)
+
+        print(random_search.best_estimator_)
+        classifier = random_search.best_estimator_
+        scores = cross_val_score(classifier,
+                                 self.pairing_df,
+                                 self.target_df)
+        print("Cross validation %0.2f accuracy with a standard \
+              deviation of %0.2f" %
+              (scores.mean(), scores.std()))
+
+    def encode_origin_dest(self):
+        '''
+        Use TargetEncoder to encode the flight Origin and Destination
+        '''
+        encoder = TargetEncoder()
+        self.pairing_df['Origin'] = encoder.\
+            fit_transform(self.pairing_df['Origin'],
+                          self.pairing_df['PAIRING_ID'])
+        encoder = TargetEncoder()
+        self.pairing_df['Dest'] = encoder\
+            .fit_transform(self.pairing_df['Dest'],
+                           self.pairing_df['PAIRING_ID'])
+        encoder = TargetEncoder()
+        self.pairing_df['Tail_Number'] = encoder\
+            .fit_transform(self.pairing_df['Tail_Number'],
+                           self.pairing_df['PAIRING_ID'])
