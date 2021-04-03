@@ -91,6 +91,17 @@ class PairingLogRegressor:
         self.pairing_df['TOT_PAIRING_UTC'] = pd.to_timedelta(
             self.pairing_df['TOT_PAIRING_UTC']).dt.seconds
 
+        self.encode_pairing_categories()
+        self.transform_pairing2()
+
+        self.remove_duty_columns()
+
+        self.target_df = pd.DataFrame()
+        self.target_df['PAIRING_ID'] = self.pairing_df['PAIRING_ID']
+        self.encode_pairing()
+        del self.pairing_df['PAIRING_ID']
+
+    def transform_pairing1(self):
         # convert datetime into second
         self.pairing_df['ORIGIN_UTC'] = pd.to_datetime(
             self.pairing_df['ORIGIN_UTC'])
@@ -116,6 +127,38 @@ class PairingLogRegressor:
         self.pairing_df['FL_DATE'] = self.pairing_df.FL_DATE.str.replace(
             "/", "").astype(int)
 
+    def transform_pairing2(self):
+        # convert datetime into second
+        self.pairing_df['ORIGIN_UTC'] = pd.to_datetime(
+            self.pairing_df['ORIGIN_UTC'])
+
+        self.pairing_df['ORIGIN_DAY'] = self.pairing_df['ORIGIN_UTC'].dt.day
+        self.pairing_df['ORIGIN_MONTH'] = self.pairing_df['ORIGIN_UTC'].dt.month
+        self.pairing_df['ORIGIN_YEAR'] = self.pairing_df['ORIGIN_UTC'].dt.year
+        self.pairing_df['ORIGIN_HOUR'] = self.pairing_df['ORIGIN_UTC'].dt.hour
+        self.pairing_df['ORIGIN_MINUTE'] = self.pairing_df['ORIGIN_UTC'].dt.minute
+
+        self.pairing_df['DEST_UTC'] = pd.to_datetime(
+            self.pairing_df['DEST_UTC'])
+        self.pairing_df['DEST_DAY'] = self.pairing_df['DEST_UTC'].dt.day
+        self.pairing_df['DEST_MONTH'] = self.pairing_df['DEST_UTC'].dt.month
+        self.pairing_df['DEST_YEAR'] = self.pairing_df['DEST_UTC'].dt.year
+        self.pairing_df['DEST_HOUR'] = self.pairing_df['DEST_UTC'].dt.hour
+        self.pairing_df['DEST_MINUTE'] = self.pairing_df['DEST_UTC'].dt.minute
+        self.pairing_df = self.pairing_df.drop(['ORIGIN_UTC',
+                                                'DEST_UTC'], axis=1)
+
+        self.pairing_df['FL_DATE'] = pd.to_datetime(
+            self.pairing_df['FL_DATE'])
+        self.pairing_df['FL_DATE_DAY'] = self.pairing_df['FL_DATE'].dt.day
+        self.pairing_df['FL_DATE_MONTH'] = self.pairing_df['FL_DATE'].dt.month
+        self.pairing_df['FL_DATE_YEAR'] = self.pairing_df['FL_DATE'].dt.year
+
+        self.pairing_df = self.pairing_df.drop(['FL_DATE'], axis=1)
+
+        # Convert flight date to int
+
+    def encode_pairing_categories(self):
         '''
         Use TargetEncoder to encode the flight Origin and Destination
         '''
@@ -128,13 +171,6 @@ class PairingLogRegressor:
         encoder = TargetEncoder()
         self.pairing_df['TAIL_NUM'] = encoder.fit_transform(
             self.pairing_df['TAIL_NUM'], self.pairing_df['PAIRING_ID'])
-
-        self.remove_duty_columns()
-
-        self.target_df = pd.DataFrame()
-        self.target_df['PAIRING_ID'] = self.pairing_df['PAIRING_ID']
-        self.encode_pairing()
-        del self.pairing_df['PAIRING_ID']
 
     def select_pairings(self, total):
         '''
@@ -177,9 +213,18 @@ class PairingLogRegressor:
         self.pairing_df[indices_to_keep].astype(np.float64)
 
     def encode_pairing(self):
-        # Use label encoder to encode the target pairing Ids to start from
-        # 0, 1, 2, ... XGBoost requires target to start from 0 instead of
-        # random PAIRING_IDs selected from
+        '''
+        Use label encoder to encode the target pairing Ids to start from
+        0, 1, 2, ... XGBoost requires target to start from 0 instead of
+        random PAIRING_IDs selected from select_pairings() function.
+
+
+        Returns
+        -------
+        None.
+
+        '''
+
         le = preprocessing.LabelEncoder()
         le.fit(self.target_df)
 
@@ -354,7 +399,7 @@ class PairingLogRegressor:
             num_class=len(self.target_df.PAIRING_ID.unique()),
             eval_metric="mlogloss",
             verbosity=1,
-            min_child_weight=10
+            min_child_weight=1
             # gamma=gamma,
             # reg_alpha=reg_alpha,
             # max_depth=max_depth,
@@ -402,6 +447,16 @@ class PairingLogRegressor:
         pickle.dump(xgb_model, open(st.DATA_DIR+"/model/xgboost.dat", "wb"))
 
     def remove_duty_columns(self):
+        '''
+        Remove features that are used in creating the pairings but will
+        not available in the flights feature, when the flights are passed
+        to the trained model to identify the pairing classification.
+
+        Returns
+        -------
+        None.
+
+        '''
         self.pairing_df = self.pairing_df.drop(['DUTY_REP_TM_UTC',
                                                 'DUTY_REL_TM_UTC',
                                                 'NEW_DUTY_ID',

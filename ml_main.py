@@ -69,8 +69,8 @@ def main():
         # plr.decision_tree_classifier()
         # plr.gradient_boost_classifier()
         # plr.random_forest_classifier()
-        plr.xgboost_model_parms()
-        # plr.xgboost_classifier()
+        # plr.xgboost_model_parms()
+        plr.xgboost_classifier()
 
         logger.info("Finished main")
     except Exception as e:
