@@ -45,7 +45,7 @@ from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 
 
 class PairingLogRegressor:
-    def __init__(self, feature_file):
+    def __init__(self, feature_file, pairing_month, pairing_model_output_file):
         '''
 
         Parameters
@@ -66,6 +66,8 @@ class PairingLogRegressor:
         self.X_test = None
         self.y_train = None
         self.y_test = None
+        self.pairing_month = pairing_month
+        self.pairing_model_output_file = pairing_model_output_file
 
     def process(self):
         '''
@@ -76,7 +78,8 @@ class PairingLogRegressor:
         None.
 
         '''
-        self.pairing_df = pd.read_csv(DATA_DIR+self.feature_file)
+        self.pairing_df = pd.read_csv(
+            DATA_DIR+self.pairing_month+"/"+self.feature_file)
 
         pair_freq = self.select_pairings(100)
         self.pairing_df = self.pairing_df.loc[self.pairing_df['PAIRING_ID']
@@ -98,8 +101,20 @@ class PairingLogRegressor:
 
         self.target_df = pd.DataFrame()
         self.target_df['PAIRING_ID'] = self.pairing_df['PAIRING_ID']
-        self.encode_pairing()
+        self.selected_pairing_df = self.pairing_df.copy()
+        self.encode_pairing_target()
         del self.pairing_df['PAIRING_ID']
+
+        self.pairing_df = pd.write_csv(
+            DATA_DIR+self.pairing_month+"/"+self.pairing_model_output_file)
+
+    def get_selected_pairings(self):
+        '''
+        Return subset of Pairings used to train the model. Only the flight IDs
+        returned in this model is used in Model deployment to identify the 
+        PAIRING_IDs for new month
+        '''
+        return self.selected_pairing_df
 
     def transform_pairing1(self):
         # convert datetime into second
@@ -212,7 +227,7 @@ class PairingLogRegressor:
 
         self.pairing_df[indices_to_keep].astype(np.float64)
 
-    def encode_pairing(self):
+    def encode_pairing_target(self):
         '''
         Use label encoder to encode the target pairing Ids to start from
         0, 1, 2, ... XGBoost requires target to start from 0 instead of
@@ -230,6 +245,7 @@ class PairingLogRegressor:
 
         encoded = le.transform(self.target_df)
         self.target_df = pd.DataFrame(encoded, columns=['PAIRING_ID'])
+        self.original_target_df = le.inverse_transform(self.target_df)
 
     def split_feature(self):
         '''

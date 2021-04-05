@@ -30,5 +30,5 @@ ROOT_DIR = os.getcwd()
 DATA_DIR = ROOT_DIR+"/crewml/data/files/"
 RESOURCE_DIR = ROOT_DIR+"/crewml/config/resources/"
 LOG_DIR = ROOT_DIR+"/crewml/log/"
-
+MODEL_DIR = DATA_DIR+"model/"
 print(DATA_DIR)

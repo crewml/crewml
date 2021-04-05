@@ -226,7 +226,7 @@ class FlightCategorizer:
         df1 = df1.sort_values('ORIGIN_UTC')
         df2 = df2.sort_values('ORIGIN_UTC')
 
-        for index, first_fl_pair in df1.iterfirst_fl_pairs():
+        for index, first_fl_pair in df1.iterrows():
             print("len of final_duty_df=", len(final_duty_df))
             org_airport = first_fl_pair["ORIGIN"]
             dest_airport = first_fl_pair["DEST"]
