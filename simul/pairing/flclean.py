@@ -43,7 +43,7 @@ class FlightCleaner:
         feature,
         timezone_file_name,
         output_file_name,
-        ):
+    ):
 
         self.logger = logging.getLogger(__name__)
         self.timezone_file_name = timezone_file_name
@@ -67,28 +67,33 @@ class FlightCleaner:
 
             self.flights_df.insert(0, 'FL_ID',
                                    self.flights_df.reset_index().index)
+
+            self.flights_df["FL_KEY"] = self.flights_df["FL_DATE"].astype(
+                str) + self.flights_df["ORIGIN"] + self.flights_df["DEST"]
+
             self.logger.info('total flights DataFrame shape=',
                              self.flights_df.shape)
 
             # find timeZones for departure and arrival flight time
 
             (self.flights_df['ORIGIN_TZ'], self.flights_df['DEST_TZ'
-             ]) = zip(*self.flights_df.apply(lambda x: \
-                      self.calculateTimeZone(x['ORIGIN'], x['DEST']),
-                      axis=1))
+                                                           ]) = zip(*self.flights_df.apply(lambda x:
+                                                                                           self.calculateTimeZone(
+                                                                                               x['ORIGIN'], x['DEST']),
+                                                                                           axis=1))
 
             # cacluate flight time and convert orgin and destination
             # local time to UTC
 
             (self.flights_df['AIR_TIME'], self.flights_df['ORIGIN_UTC'
-             ], self.flights_df['DEST_UTC']) = \
-                zip(*self.flights_df.apply(lambda x: \
-                    self.calculateFltTime(x['FL_DATE'], x['CRS_DEP_TIME'
-                    ], x['CRS_ARR_TIME'], x['ORIGIN_TZ'], x['DEST_TZ'
-                    ]), axis=1))
+                                                          ], self.flights_df['DEST_UTC']) = \
+                zip(*self.flights_df.apply(lambda x:
+                                           self.calculateFltTime(x['FL_DATE'], x['CRS_DEP_TIME'
+                                                                                 ], x['CRS_ARR_TIME'], x['ORIGIN_TZ'], x['DEST_TZ'
+                                                                                                                         ]), axis=1))
 
             self.flights_df.to_csv(DATA_DIR + self.output_file_name)
-            self.logger.info('File created:%s and size %s', \
+            self.logger.info('File created:%s and size %s',
                              self.output_file_name, len(self.flights_df))
         except Exception as e:
 
@@ -100,7 +105,7 @@ class FlightCleaner:
         # Feb 2020 flight data for Delta Airlines
 
         self.flights_df = pd.read_csv(DATA_DIR + self.input_file_name,
-                dtype='unicode')
+                                      dtype='unicode')
         self.logger.info('Raw fligh data loaded:', self.input_file_name)
 
         # Read timezones for airport iata_code
@@ -126,7 +131,7 @@ class FlightCleaner:
         z,
         tz1,
         tz2,
-        ):
+    ):
 
         timezone1 = pytz.timezone(tz1)
         timezone2 = pytz.timezone(tz2)
@@ -141,9 +146,9 @@ class FlightCleaner:
             tz1,
             'tz2=',
             tz2,
-            )
+        )
 
-        flt_dt = datetime.datetime.strptime(x, '%Y-%m-%d')
+        flt_dt = datetime.datetime.strptime(x, '%m/%d/%Y')
 
         y = str(int(y)).zfill(4)
         z = str(int(z)).zfill(4)
@@ -164,7 +169,7 @@ class FlightCleaner:
             y_min,
             0,
             0,
-            ))
+        ))
         dt2 = timezone2.localize(datetime.datetime(
             flt_dt.year,
             flt_dt.month,
@@ -173,7 +178,7 @@ class FlightCleaner:
             z_min,
             0,
             0,
-            ))
+        ))
 
         dt1_utc = dt1.astimezone(pytz.utc)
         dt2_utc = dt2.astimezone(pytz.utc)
@@ -194,7 +199,7 @@ class FlightCleaner:
                 z_min,
                 0,
                 0,
-                ))
+            ))
             dt2_utc = dt2.astimezone(pytz.utc)
 
         flt_time = dt2 - dt1

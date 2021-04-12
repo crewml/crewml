@@ -28,6 +28,7 @@ import pandas as pd
 import os
 import itertools
 import numpy as np
+import glob
 
 from crewml.config import config
 import crewml.common as st
@@ -85,12 +86,8 @@ class Feature:
         # file_name is passed use that file. At the end of this step either
         # it uses the existing file or passed-in file to load.
         if file_name is None:
-            files = os.listdir(self.load_dir)
-            files = list(filter(lambda x: x.find(".csv") != -1, files))
-            paths = [os.path.join(self.load_dir, basename)
-                     for basename in files]
-            self.file_name = max(paths, key=os.path.getctime)
-
+            files = glob.glob(self.load_dir+"/*")
+            self.file_name = max(files, key=os.path.getmtime)
         else:
             self.file_name = file_name
 

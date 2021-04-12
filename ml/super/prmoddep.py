@@ -25,48 +25,66 @@ SOFTWARE.
 '''
 import pandas as pd
 import logging
-from crewml.common import MODEL_DIR
+
+from crewml.common import DEPLOY_DIR
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import matthews_corrcoef
+from sklearn.metrics import balanced_accuracy_score
 
 
 class PairingModelDeployer:
-    def __init__(self, model_file):
+    def __init__(self,
+                 model_file,
+                 flight_file):
         self.logger = logging.getLogger(__name__)
         self.model_file = model_file
-        self.pairing_model = pd.read_pickle(MODEL_DIR+self.model_file)
+        self.flight_file = flight_file
+        self.pairing_model = pd.read_pickle(
+            DEPLOY_DIR+self.model_file)
+        self.flights_df = pd.read_csv(
+            DEPLOY_DIR+self.flight_file)
+        self.flights_df.drop(self.flights_df.filter(
+            regex="Unname"), axis=1, inplace=True)
 
-    def predict_pairings(self, flights):
-        self.flights_df = flights
-        self.transform_flights()
-        predictions = self.pairing_model.predict(flights)
-        print(predictions)
+    def predict_pairings(self):
 
-    def transform_flights(self):
-        # convert datetime into second
-        self.flights_df['ORIGIN_UTC'] = pd.to_datetime(
-            self.flights_df['ORIGIN_UTC'])
+        self.target_df = self.flights_df['PAIRING_ID']
+        self.encode_pairing_target()
+        self.flights_df = self.flights_df.drop(['PAIRING_ID'], axis=1)
+        predictions = self.pairing_model.predict(self.flights_df)
 
-        self.flights_df['ORIGIN_DAY'] = self.flights_df['ORIGIN_UTC'].dt.day
-        self.flights_df['ORIGIN_MONTH'] = self.flights_df['ORIGIN_UTC'].dt.month
-        self.flights_df['ORIGIN_YEAR'] = self.flights_df['ORIGIN_UTC'].dt.year
-        self.flights_df['ORIGIN_HOUR'] = self.flights_df['ORIGIN_UTC'].dt.hour
-        self.flights_df['ORIGIN_MINUTE'] = self.flights_df['ORIGIN_UTC'].dt.minute
+        #predictions_df = pd.DataFrame({'PREDICTIONS': predictions[:, 0]})
 
-        self.flights_df['DEST_UTC'] = pd.to_datetime(
-            self.flights_df['DEST_UTC'])
-        self.flights_df['DEST_DAY'] = self.flights_df['DEST_UTC'].dt.day
-        self.flights_df['DEST_MONTH'] = self.flights_df['DEST_UTC'].dt.month
-        self.flights_df['DEST_YEAR'] = self.flights_df['DEST_UTC'].dt.year
-        self.flights_df['DEST_HOUR'] = self.flights_df['DEST_UTC'].dt.hour
-        self.flights_df['DEST_MINUTE'] = self.flights_df['DEST_UTC'].dt.minute
-        self.flights_df = self.flights_df.drop(['ORIGIN_UTC',
-                                                'DEST_UTC'], axis=1)
+        print("XGBoost Test Classification Report")
+        print(classification_report(self.target_df, predictions))
 
-        self.flights_df['FL_DATE'] = pd.to_datetime(
-            self.flights_df['FL_DATE'])
-        self.flights_df['FL_DATE_DAY'] = self.flights_df['FL_DATE'].dt.day
-        self.flights_df['FL_DATE_MONTH'] = self.flights_df['FL_DATE'].dt.month
-        self.flights_df['FL_DATE_YEAR'] = self.flights_df['FL_DATE'].dt.year
+        accuracy = accuracy_score(self.target_df, predictions)
+        print("Accuracy: %.2f%%" % (accuracy * 100.0))
 
-        self.flights_df = self.flights_df.drop(['FL_DATE'], axis=1)
+        matt_score = matthews_corrcoef(self.target_df, predictions)
+        print("matthews_corrcoef=%s" % matt_score)
+
+        balanced_score = balanced_accuracy_score(
+            self.target_df, predictions)
+        print("balanced_accuracy_score=%s" % balanced_score)
+
+    def encode_pairing_target(self):
+        '''
+        Use label encoder to encode the target pairing Ids to start from
+        0, 1, 2, ... XGBoost requires target to start from 0 instead of
+        random PAIRING_IDs selected from select_pairings() function.
 
 
+        Returns
+        -------
+        None.
+
+        '''
+
+        le = LabelEncoder()
+        le.fit(self.target_df)
+
+        encoded = le.transform(self.target_df)
+        self.target_df = pd.DataFrame(encoded, columns=['PAIRING_ID'])

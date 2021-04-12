@@ -37,11 +37,14 @@ __copyright__ ="Copyright 2020 Xcel Energy, Inc"
 
 
 
+import configparser
 import logging
 import traceback
-import configparser
 class ConfigHolder:
-    section_names = ["flight_data", "download", "flight_plot"]
+    section_names = ["flight_data",
+                     "download",
+                     "flight_plot",
+                     "model_deploy"]
 
     def __init__(self, *file_names):
         '''

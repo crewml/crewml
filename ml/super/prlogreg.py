@@ -42,10 +42,16 @@ import crewml.common as st
 import pickle
 from sklearn import preprocessing
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import LabelBinarizer
 
 
 class PairingLogRegressor:
-    def __init__(self, feature_file, pairing_month, pairing_model_output_file):
+    def __init__(self, feature_file,
+                 pairing_month,
+                 pairing_model_output_file,
+                 paring_model_file):
         '''
 
         Parameters
@@ -68,6 +74,7 @@ class PairingLogRegressor:
         self.y_test = None
         self.pairing_month = pairing_month
         self.pairing_model_output_file = pairing_model_output_file
+        self.paring_model_file = paring_model_file
 
     def process(self):
         '''
@@ -80,12 +87,14 @@ class PairingLogRegressor:
         '''
         self.pairing_df = pd.read_csv(
             DATA_DIR+self.pairing_month+"/"+self.feature_file)
+        self.pairing_df.drop(self.pairing_df.filter(
+            regex="Unname"), axis=1, inplace=True)
+        self.clean_pairing()
 
         pair_freq = self.select_pairings(100)
         self.pairing_df = self.pairing_df.loc[self.pairing_df['PAIRING_ID']
                                               .isin(pair_freq['index1'])]
-        self.pairing_df.drop(self.pairing_df.filter(
-            regex="Unname"), axis=1, inplace=True)
+
         # convert timedetal to seconds
         self.pairing_df['AIR_TIME'] = pd.to_timedelta(
             self.pairing_df['AIR_TIME']).dt.seconds
@@ -94,24 +103,26 @@ class PairingLogRegressor:
         self.pairing_df['TOT_PAIRING_UTC'] = pd.to_timedelta(
             self.pairing_df['TOT_PAIRING_UTC']).dt.seconds
 
-        self.encode_pairing_categories()
-        self.transform_pairing2()
+        self.label_encode_categories()
+        # self.onehot_encode_categories()
+        self.transform_pairing1()
 
         self.remove_duty_columns()
 
+        # copy the selected features to save it to output file
+        self.selected_pairing_df = self.pairing_df.copy()
+        self.selected_pairing_df.to_csv(
+            DATA_DIR+self.pairing_month+"/"+self.pairing_model_output_file)
+
         self.target_df = pd.DataFrame()
         self.target_df['PAIRING_ID'] = self.pairing_df['PAIRING_ID']
-        self.selected_pairing_df = self.pairing_df.copy()
         self.encode_pairing_target()
         del self.pairing_df['PAIRING_ID']
-
-        self.pairing_df = pd.write_csv(
-            DATA_DIR+self.pairing_month+"/"+self.pairing_model_output_file)
 
     def get_selected_pairings(self):
         '''
         Return subset of Pairings used to train the model. Only the flight IDs
-        returned in this model is used in Model deployment to identify the 
+        returned in this model is used in Model deployment to identify the
         PAIRING_IDs for new month
         '''
         return self.selected_pairing_df
@@ -139,6 +150,9 @@ class PairingLogRegressor:
             int)
 
         # Convert flight date to int
+        self.pairing_df["FL_DATE"] = pd.to_datetime(
+            self.pairing_df["FL_DATE"]).dt.strftime('%Y/%m/%d')
+
         self.pairing_df['FL_DATE'] = self.pairing_df.FL_DATE.str.replace(
             "/", "").astype(int)
 
@@ -173,7 +187,7 @@ class PairingLogRegressor:
 
         # Convert flight date to int
 
-    def encode_pairing_categories(self):
+    def target_encode_categories(self):
         '''
         Use TargetEncoder to encode the flight Origin and Destination
         '''
@@ -186,6 +200,28 @@ class PairingLogRegressor:
         encoder = TargetEncoder()
         self.pairing_df['TAIL_NUM'] = encoder.fit_transform(
             self.pairing_df['TAIL_NUM'], self.pairing_df['PAIRING_ID'])
+
+    def label_encode_categories(self):
+        encoder = LabelEncoder()
+        self.pairing_df['ORIGIN'] = encoder.fit_transform(
+            self.pairing_df['ORIGIN'])
+        encoder = LabelEncoder()
+        self.pairing_df['DEST'] = encoder.fit_transform(
+            self.pairing_df['DEST'])
+        encoder = LabelEncoder()
+        self.pairing_df['TAIL_NUM'] = encoder.fit_transform(
+            self.pairing_df['TAIL_NUM'])
+
+    def onehot_encode_categories(self):
+        self.pairing_df = pd.get_dummies(self.pairing_df, prefix=['ORIGIN'],
+                                         columns=['ORIGIN'],
+                                         drop_first=True)
+        self.pairing_df = pd.get_dummies(self.pairing_df, prefix=['DEST'],
+                                         columns=['DEST'],
+                                         drop_first=True)
+        self.pairing_df = pd.get_dummies(self.pairing_df, prefix=['TAIL_NUM'],
+                                         columns=['TAIL_NUM'],
+                                         drop_first=True)
 
     def select_pairings(self, total):
         '''
@@ -204,6 +240,7 @@ class PairingLogRegressor:
 
         '''
         pair_freq = self.pairing_df['PAIRING_ID'].value_counts(dropna=False)
+        pair_freq.index = pair_freq.index.map(int)
         pair_freq = pair_freq[:total]
         pair_freq = pair_freq.to_frame()
         pair_freq['index1'] = pair_freq.index
@@ -222,10 +259,12 @@ class PairingLogRegressor:
         assert isinstance(
             self.pairing_df, pd.DataFrame), "df needs to be a pd.DataFrame"
         self.pairing_df.dropna(inplace=True)
+        '''
         indices_to_keep = ~self.pairing_df.isin(
             [np.nan, np.inf, -np.inf]).any(1)
 
         self.pairing_df[indices_to_keep].astype(np.float64)
+        '''
 
     def encode_pairing_target(self):
         '''
@@ -460,7 +499,8 @@ class PairingLogRegressor:
         '''
 
         # dump model with feature map
-        pickle.dump(xgb_model, open(st.DATA_DIR+"/model/xgboost.dat", "wb"))
+        pickle.dump(xgb_model, open(DATA_DIR+self.pairing_month +
+                                    "/"+self.paring_model_file, "wb"))
 
     def remove_duty_columns(self):
         '''
@@ -478,6 +518,7 @@ class PairingLogRegressor:
                                                 'NEW_DUTY_ID',
                                                 'TOT_DUTY_TM',
                                                 'TOT_PAIRING_UTC',
+                                                'FL_KEY',
                                                 'LAYOVER'], axis=1)
 
     def xgboost_model_parms(self):
