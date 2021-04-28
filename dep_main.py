@@ -50,20 +50,6 @@ def main():
         deploy_flight_input_file = ch.getValue("deploy_flight_input_file")
         deploy_paring_model_file = ch.getValue("deploy_pairing_model_file")
 
-        '''
-        Use PairingRegressor to create Regression Model
-
-        pr=prr.PairingRegressor(pairing_input_file)
-        pr.process()
-        pr.split_feature()
-        pr.perfom_decision_tree_regressor()
-        pr.perform_xgboost_regressor()
-        '''
-
-        '''
-        Use PairingLogRegressor to crete Logistic Regression Model
-        '''
-
         plr = deploy.PairingModelDeployer(model_file=deploy_paring_model_file,
                                        flight_file=deploy_flight_input_file)
         plr.predict_pairings()

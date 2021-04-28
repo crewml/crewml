@@ -30,6 +30,7 @@ import crewml.common as st
 from crewml.config import config
 from crewml.ml.super import prlogreg as prlg
 from crewml.ml.super import prmoddep as pmd
+from crewml.ml.super import flfeaturegen as feature_gen
 
 
 def main():
@@ -52,6 +53,9 @@ def main():
         pairing_input_file = ch.getValue("cost_cal_output_file")
         pairing_model_output_file = ch.getValue("pairing_model_output_file")
         paring_model_file = ch.getValue("pairing_model_file")
+        cost_cal_input_file = ch.getValue("cost_cal_input_file")
+        fa_bases = ch.getValue("dl_fa_bases")
+        fa_non_bases = ch.getValue("dl_fa_non_bases")
 
         '''
         Use PairingRegressor to create Regression Model
@@ -61,7 +65,18 @@ def main():
         pr.split_feature()
         pr.perfom_decision_tree_regressor()
         pr.perform_xgboost_regressor()
+
         '''
+
+        '''
+        Create FlightFeatureGenerator to add new features
+        '''
+        ffg = feature_gen.FlightFeatureGenerator(pairing_month,
+                                                 cost_cal_input_file,
+                                                 fa_bases,
+                                                 fa_non_bases
+                                                 )
+        ffg.process()
 
         '''
         Use PairingLogRegressor to crete Logistic Regression Model
@@ -74,20 +89,23 @@ def main():
                                        )
         plr.process()
         selected_pairings = plr.get_selected_pairings()
+        '''
         print("flight_id=%s and pairing_id=%s"
               % (selected_pairings["FL_ID"].tolist(),
                  selected_pairings["PAIRING_ID"].tolist()
                  ))
+
         plr.split_feature()
         # plr.decision_tree_classifier()
         # plr.gradient_boost_classifier()
         # plr.random_forest_classifier()
         # plr.xgboost_model_parms()
         plr.xgboost_classifier()
+        '''
 
         '''
         flights=plr.select_pairings(100)
-        pairing_model_file=ch.getValue("pairing_model_file")      
+        pairing_model_file=ch.getValue("pairing_model_file")
         prmodel=pmd.PairingModelDeployer(pairing_model_file)
         prmodel.predict_pairings(flights)
         '''

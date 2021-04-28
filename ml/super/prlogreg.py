@@ -103,20 +103,22 @@ class PairingLogRegressor:
         self.pairing_df['TOT_PAIRING_UTC'] = pd.to_timedelta(
             self.pairing_df['TOT_PAIRING_UTC']).dt.seconds
 
-        self.label_encode_categories()
-        # self.onehot_encode_categories()
+        # self.label_encode_categories()
+        self.onehot_encode_categories()
         self.transform_pairing1()
 
         self.remove_duty_columns()
+        
+        self.target_df = pd.DataFrame()
+        self.target_df['PAIRING_ID'] = self.pairing_df['PAIRING_ID']
+        self.encode_pairing_target()
 
         # copy the selected features to save it to output file
         self.selected_pairing_df = self.pairing_df.copy()
         self.selected_pairing_df.to_csv(
             DATA_DIR+self.pairing_month+"/"+self.pairing_model_output_file)
 
-        self.target_df = pd.DataFrame()
-        self.target_df['PAIRING_ID'] = self.pairing_df['PAIRING_ID']
-        self.encode_pairing_target()
+
         del self.pairing_df['PAIRING_ID']
 
     def get_selected_pairings(self):
@@ -131,23 +133,12 @@ class PairingLogRegressor:
         # convert datetime into second
         self.pairing_df['ORIGIN_UTC'] = pd.to_datetime(
             self.pairing_df['ORIGIN_UTC'])
-        self.pairing_df['ORIGIN_UTC'] = self.pairing_df.ORIGIN_UTC.astype(int)
+        self.pairing_df['ORIGIN_UTC'] = self.pairing_df.ORIGIN_UTC.astype('int64')//1e9
 
         self.pairing_df['DEST_UTC'] = pd.to_datetime(
             self.pairing_df['DEST_UTC'])
-        self.pairing_df['DEST_UTC'] = self.pairing_df.DEST_UTC.astype(int)
+        self.pairing_df['DEST_UTC'] = self.pairing_df.DEST_UTC.astype('int64')//1e9
 
-        self.pairing_df['DUTY_REL_TM_UTC'] = pd.to_datetime(
-            self.pairing_df['DUTY_REL_TM_UTC'])
-        self.pairing_df['DUTY_REL_TM_UTC'] = \
-            self.pairing_df.DUTY_REL_TM_UTC.astype(
-            int)
-
-        self.pairing_df['DUTY_REP_TM_UTC'] = pd.to_datetime(
-            self.pairing_df['DUTY_REP_TM_UTC'])
-        self.pairing_df['DUTY_REP_TM_UTC'] = \
-            self.pairing_df.DUTY_REP_TM_UTC.astype(
-            int)
 
         # Convert flight date to int
         self.pairing_df["FL_DATE"] = pd.to_datetime(
@@ -465,7 +456,7 @@ class PairingLogRegressor:
         )
         print("total num_classes=", len(self.target_df.PAIRING_ID.unique()))
 
-        self.perform_coross_validation(xgb_model)
+        # self.perform_coross_validation(xgb_model)
 
         xgb_model.fit(self.X_train, self.y_train)
 
@@ -489,18 +480,12 @@ class PairingLogRegressor:
             self.y_test, xgboost_predictions)
         print("balanced_accuracy_score=%s" % balanced_score)
 
-        '''
-        getting IndexError: too many indices for array:
-        array is 1-dimensional, but 2 were indexed
-        hinge_loss_score = hinge_loss(self.y_test,
-                                      xgboost_predictions,
-                                      labels=self.target_df)
-        print("hinge_loss_score=%s" % hinge_loss_score)
-        '''
+
 
         # dump model with feature map
         pickle.dump(xgb_model, open(DATA_DIR+self.pairing_month +
                                     "/"+self.paring_model_file, "wb"))
+        
 
     def remove_duty_columns(self):
         '''
@@ -519,6 +504,8 @@ class PairingLogRegressor:
                                                 'TOT_DUTY_TM',
                                                 'TOT_PAIRING_UTC',
                                                 'FL_KEY',
+                                                'FL_ID',
+                                                'TAIL_NUM',
                                                 'LAYOVER'], axis=1)
 
     def xgboost_model_parms(self):

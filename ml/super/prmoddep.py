@@ -25,7 +25,7 @@ SOFTWARE.
 '''
 import pandas as pd
 import logging
-
+import pickle
 from crewml.common import DEPLOY_DIR
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
@@ -41,8 +41,9 @@ class PairingModelDeployer:
         self.logger = logging.getLogger(__name__)
         self.model_file = model_file
         self.flight_file = flight_file
-        self.pairing_model = pd.read_pickle(
-            DEPLOY_DIR+self.model_file)
+        with open(DEPLOY_DIR+self.model_file, 'rb') as file:
+            self.pairing_model = pickle.load(file)
+
         self.flights_df = pd.read_csv(
             DEPLOY_DIR+self.flight_file)
         self.flights_df.drop(self.flights_df.filter(

@@ -70,6 +70,7 @@ class FlightCategorizer:
             origin_dest = list(
                 zip(self.flights_df.ORIGIN, self.flights_df.DEST))
 
+            # use set to remove duplicate flight pairs
             b2b = [x for x in origin_dest if x[0]
                    in self.fa_bases and x[1] in self.fa_bases]
             b2b = list(set(b2b))
