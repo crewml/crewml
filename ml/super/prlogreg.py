@@ -42,9 +42,7 @@ import crewml.common as st
 import pickle
 from sklearn import preprocessing
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.preprocessing import LabelBinarizer
+import joblib
 
 
 class PairingLogRegressor:
@@ -91,7 +89,7 @@ class PairingLogRegressor:
             regex="Unname"), axis=1, inplace=True)
         self.clean_pairing()
 
-        pair_freq = self.select_pairings(100)
+        pair_freq = self.select_pairings(400)
         self.pairing_df = self.pairing_df.loc[self.pairing_df['PAIRING_ID']
                                               .isin(pair_freq['index1'])]
 
@@ -103,12 +101,8 @@ class PairingLogRegressor:
         self.pairing_df['TOT_PAIRING_UTC'] = pd.to_timedelta(
             self.pairing_df['TOT_PAIRING_UTC']).dt.seconds
 
-        # self.label_encode_categories()
-        self.onehot_encode_categories()
-        self.transform_pairing1()
-
         self.remove_duty_columns()
-        
+
         self.target_df = pd.DataFrame()
         self.target_df['PAIRING_ID'] = self.pairing_df['PAIRING_ID']
         self.encode_pairing_target()
@@ -117,7 +111,6 @@ class PairingLogRegressor:
         self.selected_pairing_df = self.pairing_df.copy()
         self.selected_pairing_df.to_csv(
             DATA_DIR+self.pairing_month+"/"+self.pairing_model_output_file)
-
 
         del self.pairing_df['PAIRING_ID']
 
@@ -128,91 +121,6 @@ class PairingLogRegressor:
         PAIRING_IDs for new month
         '''
         return self.selected_pairing_df
-
-    def transform_pairing1(self):
-        # convert datetime into second
-        self.pairing_df['ORIGIN_UTC'] = pd.to_datetime(
-            self.pairing_df['ORIGIN_UTC'])
-        self.pairing_df['ORIGIN_UTC'] = self.pairing_df.ORIGIN_UTC.astype('int64')//1e9
-
-        self.pairing_df['DEST_UTC'] = pd.to_datetime(
-            self.pairing_df['DEST_UTC'])
-        self.pairing_df['DEST_UTC'] = self.pairing_df.DEST_UTC.astype('int64')//1e9
-
-
-        # Convert flight date to int
-        self.pairing_df["FL_DATE"] = pd.to_datetime(
-            self.pairing_df["FL_DATE"]).dt.strftime('%Y/%m/%d')
-
-        self.pairing_df['FL_DATE'] = self.pairing_df.FL_DATE.str.replace(
-            "/", "").astype(int)
-
-    def transform_pairing2(self):
-        # convert datetime into second
-        self.pairing_df['ORIGIN_UTC'] = pd.to_datetime(
-            self.pairing_df['ORIGIN_UTC'])
-
-        self.pairing_df['ORIGIN_DAY'] = self.pairing_df['ORIGIN_UTC'].dt.day
-        self.pairing_df['ORIGIN_MONTH'] = self.pairing_df['ORIGIN_UTC'].dt.month
-        self.pairing_df['ORIGIN_YEAR'] = self.pairing_df['ORIGIN_UTC'].dt.year
-        self.pairing_df['ORIGIN_HOUR'] = self.pairing_df['ORIGIN_UTC'].dt.hour
-        self.pairing_df['ORIGIN_MINUTE'] = self.pairing_df['ORIGIN_UTC'].dt.minute
-
-        self.pairing_df['DEST_UTC'] = pd.to_datetime(
-            self.pairing_df['DEST_UTC'])
-        self.pairing_df['DEST_DAY'] = self.pairing_df['DEST_UTC'].dt.day
-        self.pairing_df['DEST_MONTH'] = self.pairing_df['DEST_UTC'].dt.month
-        self.pairing_df['DEST_YEAR'] = self.pairing_df['DEST_UTC'].dt.year
-        self.pairing_df['DEST_HOUR'] = self.pairing_df['DEST_UTC'].dt.hour
-        self.pairing_df['DEST_MINUTE'] = self.pairing_df['DEST_UTC'].dt.minute
-        self.pairing_df = self.pairing_df.drop(['ORIGIN_UTC',
-                                                'DEST_UTC'], axis=1)
-
-        self.pairing_df['FL_DATE'] = pd.to_datetime(
-            self.pairing_df['FL_DATE'])
-        self.pairing_df['FL_DATE_DAY'] = self.pairing_df['FL_DATE'].dt.day
-        self.pairing_df['FL_DATE_MONTH'] = self.pairing_df['FL_DATE'].dt.month
-        self.pairing_df['FL_DATE_YEAR'] = self.pairing_df['FL_DATE'].dt.year
-
-        self.pairing_df = self.pairing_df.drop(['FL_DATE'], axis=1)
-
-        # Convert flight date to int
-
-    def target_encode_categories(self):
-        '''
-        Use TargetEncoder to encode the flight Origin and Destination
-        '''
-        encoder = TargetEncoder()
-        self.pairing_df['ORIGIN'] = encoder.fit_transform(
-            self.pairing_df['ORIGIN'], self.pairing_df['PAIRING_ID'])
-        encoder = TargetEncoder()
-        self.pairing_df['DEST'] = encoder.fit_transform(
-            self.pairing_df['DEST'], self.pairing_df['PAIRING_ID'])
-        encoder = TargetEncoder()
-        self.pairing_df['TAIL_NUM'] = encoder.fit_transform(
-            self.pairing_df['TAIL_NUM'], self.pairing_df['PAIRING_ID'])
-
-    def label_encode_categories(self):
-        encoder = LabelEncoder()
-        self.pairing_df['ORIGIN'] = encoder.fit_transform(
-            self.pairing_df['ORIGIN'])
-        encoder = LabelEncoder()
-        self.pairing_df['DEST'] = encoder.fit_transform(
-            self.pairing_df['DEST'])
-        encoder = LabelEncoder()
-        self.pairing_df['TAIL_NUM'] = encoder.fit_transform(
-            self.pairing_df['TAIL_NUM'])
-
-    def onehot_encode_categories(self):
-        self.pairing_df = pd.get_dummies(self.pairing_df, prefix=['ORIGIN'],
-                                         columns=['ORIGIN'],
-                                         drop_first=True)
-        self.pairing_df = pd.get_dummies(self.pairing_df, prefix=['DEST'],
-                                         columns=['DEST'],
-                                         drop_first=True)
-        self.pairing_df = pd.get_dummies(self.pairing_df, prefix=['TAIL_NUM'],
-                                         columns=['TAIL_NUM'],
-                                         drop_first=True)
 
     def select_pairings(self, total):
         '''
@@ -291,6 +199,133 @@ class PairingLogRegressor:
             self.y_test = train_test_split(
                 self.pairing_df, self.target_df,
                 test_size=0.30, random_state=40)
+
+    def xgboost_classifier(self):
+        '''
+        Using the train and test data crete XGBClassifier
+        to train and test the Pairing data
+
+        Returns
+        -------
+        None.
+
+        '''
+        xgb_model = xgb.XGBClassifier(
+            booster="gbtree",
+            # error evaluation for multiclass training
+            objective="multi:softmax",
+            n_gpus=0,
+            n_jobs=-1,
+            gamma=1,
+            max_depth=4,
+            learning_rate=0.01,
+            # use_label_encoder=False,
+            n_estimators=1000,
+            num_class=len(self.target_df.PAIRING_ID.unique()),
+            eval_metric="mlogloss",
+            verbosity=1,
+            min_child_weight=1
+            # reg_alpha=reg_alpha,
+            # max_depth=max_depth,
+            # subsample=subsample,
+            # colsample_bytree= colsample_bytree,
+            # min_child_weight= min_child_weight,
+            # params
+        )
+        print("total num_classes=", len(self.target_df.PAIRING_ID.unique()))
+
+        # self.perform_coross_validation(xgb_model)
+
+        xgb_model.fit(self.X_train, self.y_train)
+        xgboost_predictions = xgb_model.predict(self.X_test)
+        print("XGBoost Test  Confusion Matrix:")
+        print(confusion_matrix(self.y_test, xgboost_predictions))
+
+        print("XGBoost Test Classification Report")
+        print(classification_report(self.y_test, xgboost_predictions))
+
+        accuracy = accuracy_score(self.y_test, xgboost_predictions)
+        print("Accuracy: %.2f%%" % (accuracy * 100.0))
+
+        matt_score = matthews_corrcoef(self.y_test, xgboost_predictions)
+        print("matthews_corrcoef=%s" % matt_score)
+
+        balanced_score = balanced_accuracy_score(
+            self.y_test, xgboost_predictions)
+        print("balanced_accuracy_score=%s" % balanced_score)
+
+        # dump model with feature map
+        pickle.dump(xgb_model, open(DATA_DIR+self.pairing_month +
+                                    "/"+self.paring_model_file, "wb"))
+
+    def remove_duty_columns(self):
+        '''
+        Remove features that are used in creating the pairings but will
+        not available in the flights feature, when the flights are passed
+        to the trained model to identify the pairing classification.
+
+        Returns
+        -------
+        None.
+
+        '''
+        self.pairing_df = self.pairing_df.drop(['DUTY_REP_TM_UTC',
+                                                'DUTY_REL_TM_UTC',
+                                                'NEW_DUTY_ID',
+                                                'TOT_DUTY_TM',
+                                                'TOT_PAIRING_UTC',
+                                                'FL_KEY',
+                                                'TAIL_NUM',
+                                                'FL_ID',
+                                                'LAYOVER'], axis=1)
+
+    def xgboost_model_parms(self):
+        params = {
+            "learning_rate": [0.05, 0.10, 0.15, 0.20, 0.25, 0.30],
+            "max_depth": [3, 4, 5, 6, 8, 10, 12, 15],
+            "min_child_weight": [1, 3, 5, 7],
+            "gamma": [0.0, 0.1, 0.2, 0.3, 0.4],
+            "colsample_bytree": [0.3, 0.4, 0.5, 0.7],
+            "objective": ["multi:softprob", "multi:softmax"]
+
+        }
+        classifier = xgb.XGBClassifier(use_label_encoder=False)
+        random_search = RandomizedSearchCV(classifier,
+                                           param_distributions=params,
+                                           n_iter=5,
+                                           scoring='accuracy',
+                                           n_jobs=-1,
+                                           cv=5,
+                                           verbose=1)
+        self.encode_pairing()
+        random_search.fit(self.pairing_df,
+                          self.target_df)
+
+        print(random_search.best_estimator_)
+        classifier = random_search.best_estimator_
+        scores = cross_val_score(classifier,
+                                 self.pairing_df,
+                                 self.target_df)
+        print("Cross validation %0.2f accuracy with a standard \
+              deviation of %0.2f" %
+              (scores.mean(), scores.std()))
+
+    def encode_origin_dest(self):
+        '''
+        Use TargetEncoder to encode the flight Origin and Destination
+        '''
+        encoder = TargetEncoder()
+        self.pairing_df['Origin'] = encoder.\
+            fit_transform(self.pairing_df['Origin'],
+                          self.pairing_df['PAIRING_ID'])
+        encoder = TargetEncoder()
+        self.pairing_df['Dest'] = encoder\
+            .fit_transform(self.pairing_df['Dest'],
+                           self.pairing_df['PAIRING_ID'])
+        encoder = TargetEncoder()
+        self.pairing_df['Tail_Number'] = encoder\
+            .fit_transform(self.pairing_df['Tail_Number'],
+                           self.pairing_df['PAIRING_ID'])
 
     def decision_tree_classifier(self):
         '''
@@ -420,138 +455,3 @@ class PairingLogRegressor:
         print("Cross validation %0.2f accuracy with a standard \
               deviation of %0.2f" %
               (scores.mean(), scores.std()))
-
-    def xgboost_classifier(self):
-        '''
-        Using the train and test data crete XGBClassifier
-        to train and test the Pairing data
-
-        Returns
-        -------
-        None.
-
-        '''
-        xgb_model = xgb.XGBClassifier(
-            booster="gbtree",
-            # error evaluation for multiclass training
-            objective="multi:softmax",
-            n_gpus=0,
-            n_jobs=-1,
-            gamma=0,
-            max_depth=4,
-            learning_rate=0.01,
-            use_label_encoder=False,
-            n_estimators=1000,
-            num_class=len(self.target_df.PAIRING_ID.unique()),
-            eval_metric="mlogloss",
-            verbosity=1,
-            min_child_weight=1
-            # gamma=gamma,
-            # reg_alpha=reg_alpha,
-            # max_depth=max_depth,
-            # subsample=subsample,
-            # colsample_bytree= colsample_bytree,
-            # min_child_weight= min_child_weight,
-            # params
-        )
-        print("total num_classes=", len(self.target_df.PAIRING_ID.unique()))
-
-        # self.perform_coross_validation(xgb_model)
-
-        xgb_model.fit(self.X_train, self.y_train)
-
-        # print("XGBoost Train  Confusion Matrix:")
-        # print(confusion_matrix(self.y_train, pred_train_xg_for))
-
-        xgboost_predictions = xgb_model.predict(self.X_test)
-        print("XGBoost Test  Confusion Matrix:")
-        print(confusion_matrix(self.y_test, xgboost_predictions))
-
-        print("XGBoost Test Classification Report")
-        print(classification_report(self.y_test, xgboost_predictions))
-
-        accuracy = accuracy_score(self.y_test, xgboost_predictions)
-        print("Accuracy: %.2f%%" % (accuracy * 100.0))
-
-        matt_score = matthews_corrcoef(self.y_test, xgboost_predictions)
-        print("matthews_corrcoef=%s" % matt_score)
-
-        balanced_score = balanced_accuracy_score(
-            self.y_test, xgboost_predictions)
-        print("balanced_accuracy_score=%s" % balanced_score)
-
-
-
-        # dump model with feature map
-        pickle.dump(xgb_model, open(DATA_DIR+self.pairing_month +
-                                    "/"+self.paring_model_file, "wb"))
-        
-
-    def remove_duty_columns(self):
-        '''
-        Remove features that are used in creating the pairings but will
-        not available in the flights feature, when the flights are passed
-        to the trained model to identify the pairing classification.
-
-        Returns
-        -------
-        None.
-
-        '''
-        self.pairing_df = self.pairing_df.drop(['DUTY_REP_TM_UTC',
-                                                'DUTY_REL_TM_UTC',
-                                                'NEW_DUTY_ID',
-                                                'TOT_DUTY_TM',
-                                                'TOT_PAIRING_UTC',
-                                                'FL_KEY',
-                                                'FL_ID',
-                                                'TAIL_NUM',
-                                                'LAYOVER'], axis=1)
-
-    def xgboost_model_parms(self):
-        params = {
-            "learning_rate": [0.05, 0.10, 0.15, 0.20, 0.25, 0.30],
-            "max_depth": [3, 4, 5, 6, 8, 10, 12, 15],
-            "min_child_weight": [1, 3, 5, 7],
-            "gamma": [0.0, 0.1, 0.2, 0.3, 0.4],
-            "colsample_bytree": [0.3, 0.4, 0.5, 0.7],
-            "objective": ["multi:softprob", "multi:softmax"]
-
-        }
-        classifier = xgb.XGBClassifier(use_label_encoder=False)
-        random_search = RandomizedSearchCV(classifier,
-                                           param_distributions=params,
-                                           n_iter=5,
-                                           scoring='accuracy',
-                                           n_jobs=-1,
-                                           cv=5,
-                                           verbose=1)
-        self.encode_pairing()
-        random_search.fit(self.pairing_df,
-                          self.target_df)
-
-        print(random_search.best_estimator_)
-        classifier = random_search.best_estimator_
-        scores = cross_val_score(classifier,
-                                 self.pairing_df,
-                                 self.target_df)
-        print("Cross validation %0.2f accuracy with a standard \
-              deviation of %0.2f" %
-              (scores.mean(), scores.std()))
-
-    def encode_origin_dest(self):
-        '''
-        Use TargetEncoder to encode the flight Origin and Destination
-        '''
-        encoder = TargetEncoder()
-        self.pairing_df['Origin'] = encoder.\
-            fit_transform(self.pairing_df['Origin'],
-                          self.pairing_df['PAIRING_ID'])
-        encoder = TargetEncoder()
-        self.pairing_df['Dest'] = encoder\
-            .fit_transform(self.pairing_df['Dest'],
-                           self.pairing_df['PAIRING_ID'])
-        encoder = TargetEncoder()
-        self.pairing_df['Tail_Number'] = encoder\
-            .fit_transform(self.pairing_df['Tail_Number'],
-                           self.pairing_df['PAIRING_ID'])

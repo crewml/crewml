@@ -105,7 +105,7 @@ class Feature:
             DataFrame with loaded data from the csv file.
 
         '''
-        self.df = pd.read_csv(self.file_name, usecols=self.flight_features)
+        self.df = pd.read_csv(self.load_dir +self.file_name, usecols=self.flight_features)
         self.df = self.df[self.df.MKT_UNIQUE_CARRIER ==
                           self.preferred_airline_code]
         self.df = self.df.reset_index(drop=True)

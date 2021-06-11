@@ -68,6 +68,12 @@ class FlightCleaner:
             self.flights_df.insert(0, 'FL_ID',
                                    self.flights_df.reset_index().index)
 
+            self.flights_df['FL_DATE'] = \
+                pd.to_datetime(self.flights_df['FL_DATE'])
+
+            self.flights_df['FL_DATE'] = \
+                self.flights_df['FL_DATE'].dt.strftime('%m/%d/%Y')
+
             self.flights_df["FL_KEY"] = self.flights_df["FL_DATE"].astype(
                 str) + self.flights_df["ORIGIN"] + self.flights_df["DEST"]
 

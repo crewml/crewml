@@ -32,7 +32,7 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import matthews_corrcoef
 from sklearn.metrics import balanced_accuracy_score
-
+import joblib
 
 class PairingModelDeployer:
     def __init__(self,
@@ -42,16 +42,22 @@ class PairingModelDeployer:
         self.model_file = model_file
         self.flight_file = flight_file
         with open(DEPLOY_DIR+self.model_file, 'rb') as file:
-            self.pairing_model = pickle.load(file)
+            self.pairing_model = joblib.load(file)
 
         self.flights_df = pd.read_csv(
             DEPLOY_DIR+self.flight_file)
         self.flights_df.drop(self.flights_df.filter(
             regex="Unname"), axis=1, inplace=True)
+        
 
     def predict_pairings(self):
+        
+        pair_freq = self.select_pairings(400)
+        self.flights_df = self.flights_df.loc[self.flights_df['PAIRING_ID']
+                                              .isin(pair_freq['index1'])]
 
-        self.target_df = self.flights_df['PAIRING_ID']
+
+
         self.encode_pairing_target()
         self.flights_df = self.flights_df.drop(['PAIRING_ID'], axis=1)
         predictions = self.pairing_model.predict(self.flights_df)
@@ -82,10 +88,35 @@ class PairingModelDeployer:
         -------
         None.
 
-        '''
-
+        '''       
+        self.target_df = self.flights_df['PAIRING_ID']
         le = LabelEncoder()
         le.fit(self.target_df)
 
         encoded = le.transform(self.target_df)
         self.target_df = pd.DataFrame(encoded, columns=['PAIRING_ID'])
+        self.original_target_df = le.inverse_transform(self.target_df)
+
+    def select_pairings(self, total):
+        '''
+        This function selects total pairings to be given to the model.
+        Instead of passing all the pairings, we can select "total" number of
+        pairings to train and test the model. There are many pairing exist
+        with only two flights in it and it is not enough to train a pairing
+        category just with two flights. Until we can get more data by
+        combining multiple months or improving our pairing generation
+        algorithm to incude more flights for a given pairing, this function
+        will choose top "total" pairings which has more flights in it.
+
+        Returns
+        -------
+        pair_freq : pairing frequencey
+
+        '''
+        pair_freq = self.flights_df['PAIRING_ID'].value_counts(dropna=False)
+        pair_freq.index = pair_freq.index.map(int)
+        pair_freq = pair_freq[:total]
+        pair_freq = pair_freq.to_frame()
+        pair_freq['index1'] = pair_freq.index
+        
+        return pair_freq

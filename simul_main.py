@@ -56,11 +56,12 @@ def main():
         timezone_file = ch.getValue("timezone_file")
         clean_output = ch.getValue("clean_output_file")
         dutygen_files = ch.getValue("dutygen_files").split(",")
+        raw_input_file = ch.getValue("raw_input_file")
 
         elements = ch.getValue("flight_features")
         elements = elements.split(",")
 
-        feature = fet.Feature()
+        feature = fet.Feature(file_name=raw_input_file)
 
         logger.info("Creating FlightCleaner object")
         fc = fl.FlightCleaner(timezone_file_name=timezone_file,

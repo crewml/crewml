@@ -51,9 +51,8 @@ def main():
         deploy_paring_model_file = ch.getValue("deploy_pairing_model_file")
 
         plr = deploy.PairingModelDeployer(model_file=deploy_paring_model_file,
-                                       flight_file=deploy_flight_input_file)
+                                          flight_file=deploy_flight_input_file)
         plr.predict_pairings()
-
 
         logger.info("Finished main")
     except Exception as e:

@@ -69,7 +69,8 @@ def main():
 
         '''
 
-        # Create FlightFeatureGenerator to add new features
+        '''
+        Create FlightFeatureGenerator to add new features
         ffg = feature_gen.FlightFeatureGenerator(pairing_month,
                                                  cost_cal_input_file,
                                                  feature_gen_file,
@@ -77,12 +78,13 @@ def main():
                                                  fa_non_bases
                                                  )
         ffg.process()
+        '''
 
         '''
         Use PairingLogRegressor to crete Logistic Regression Model
         '''
 
-        plr = prlg.PairingLogRegressor(feature_gen_file,
+        plr = prlg.PairingLogRegressor(cost_cal_input_file,
                                        pairing_month,
                                        pairing_model_output_file,
                                        paring_model_file
@@ -103,6 +105,7 @@ def main():
         '''
         plr.split_feature()
         plr.xgboost_classifier()
+
 
         '''
         flights=plr.select_pairings(100)
