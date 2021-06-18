@@ -88,19 +88,20 @@ feature - This class contains the data downloaded from S3.
 ## Pairing Level Rules
 * Pairing must start and end with same crew base.
 * If a Pairing doesn't end in the base add deadhead to the base or add Layover leg
-* FA TAFB (Time Away From Base) is considered
-* FA minimum pay guarantee is considered
-* Duty Level Rules
-* Duty Period report time (brief time)can be 45 minutes domestic, 60 minutes international, 75 minutes international overwater before the flight departure time. Similarly release time (debrief) can be the same minutes after the flight arrival time.
-* Minimum and maximum overnight rest between duties in a pairing.
-* Maximum number of duties in a pairing.
-* Maximum pairing length in calendar days.
-* Duty period for FA Pairings can't exceed more than 18 hours
-* The 8-in-24 rule, which requires a longer overnight rest time (compensatory rest) if there are more than 8 hours of flying time in any 24-hour window.
-* Many more from government, labor union, and airline operational rules.
-* If a duty period doesn't follow one of the rules add Layover
+* All Pairings will have duties attached with it. Each duty will have one or more flights
+
+## Duty Level Rules
+* 1. 45 minutes (brief time) added to flight departure time which will be duty period report time.
+* 2. 45 minutes (dbrief time) added to flight arrival time which will be duty period end time.
+* 3. A duty can have one or more flights attached to it. duty period end time is the last flight's
+* arrival time + 45
+* 4. Within each duty two consecutive flights are seperated by 15 minutes, sit-time. For the 
+* duty period total time calculations, 15 minutes is substracted from the each flight's departure time
+* and 15 minutes is added to flight arrival time.
+* 5. Total duty period within a pairing is between 8-12 hours
+* 6. Layover added for the flight at the end of the duty if the duty ends not 
+* in staring base origin airport and if the flight arrival time falls between 8PM and 6AM.
 
 ## Flight Level Rules
-* Each flight will have minimum and maximum number of FAs based on flight duration
-* Activity Builder – Build various activities for a given month
+* 1. A flight has one departure and one arrival airport in it.
 
