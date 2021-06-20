@@ -100,7 +100,10 @@ class PairingLogRegressor:
             self.pairing_df['TOT_DUTY_TM']).dt.seconds
         self.pairing_df['TOT_PAIRING_UTC'] = pd.to_timedelta(
             self.pairing_df['TOT_PAIRING_UTC']).dt.seconds
-
+        # CRS_ELAPSED_TIME is same as AIR_TIME it can be deleted
+        # self.pairing_df['CRS_ELAPSED_TIME'] = self.pairing_df['CRS_ELAPSED_TIME'].astype(int)
+        # self.pairing_df['CRS_ELAPSED_TIME'] = self.pairing_df['CRS_ELAPSED_TIME'].multiply(60)
+        
         self.remove_duty_columns()
 
         self.target_df = pd.DataFrame()
@@ -276,6 +279,7 @@ class PairingLogRegressor:
                                                 'TOT_PAIRING_UTC',
                                                 'FL_KEY',
                                                 'TAIL_NUM',
+                                                'CRS_ELAPSED_TIME',
                                                 'FL_ID',
                                                 'LAYOVER'], axis=1)
 

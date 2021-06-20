@@ -37,7 +37,18 @@ from crewml.common import DATA_DIR
 
 
 class FlightCleaner:
+    '''
+    AIR_TIME	- Flight Time, in Minutes 
+    CRS_ELAPSED_TIME	- CRS Elapsed Time of Flight, in Minutes
+    DEST	- Destination airport
+    ORIGIN  - Origin Airport
+    DEST_UTC	- Destination time in UTC
+    DISTANCE	- Distance between airports (miles)
+    FL_DATE		- Flight departure date
+    ORIGIN_UTC	- Flight departure time in UTC
 
+
+    '''
     def __init__(
         self,
         feature,
