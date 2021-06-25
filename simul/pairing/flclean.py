@@ -152,19 +152,8 @@ class FlightCleaner:
 
         timezone1 = pytz.timezone(tz1)
         timezone2 = pytz.timezone(tz2)
-        self.logger.info(
-            'x=',
-            x,
-            'y=',
-            y,
-            'z=',
-            z,
-            'tz1=',
-            tz1,
-            'tz2=',
-            tz2,
-        )
 
+        self.logger.info("x=%s,y=%s,z=%s,tz1=%s,tz2=%s" % (x,y,z,tz1,tz2))
         flt_dt = datetime.datetime.strptime(x, '%m/%d/%Y')
 
         y = str(int(y)).zfill(4)
@@ -208,6 +197,11 @@ class FlightCleaner:
             else:
                 month = flt_dt.month
                 day = flt_dt.day + 1
+
+            if month > 12:
+                month=12
+                self.logger.info("month greater than 12. month=%s,day=%s,z_hour=%s,z_min=%s" % (month,day,z_hour,z_min))
+                
             dt2 = timezone2.localize(datetime.datetime(
                 flt_dt.year,
                 month,
